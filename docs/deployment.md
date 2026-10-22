@@ -390,7 +390,7 @@ changes.
 
 **Step 3 — Create an access policy**
 
-1. **Policy name:** `Alpha testers`
+1. **Policy name:** `Allowed users`
 2. **Action:** Allow
 3. **Include rule:** choose one of:
    - **Emails** — list each tester's email address
@@ -412,7 +412,7 @@ policy with service tokens for programmatic access, and email-based policies
 for browser access.
 
 > **Note:** Cloudflare Access free tier supports up to 50 users. For private
-> alpha with 3–5 trusted testers, this is the simplest zero-code auth solution.
+> deployment with a handful of trusted users, this is the simplest zero-code auth solution.
 
 ### Other hosting
 
@@ -438,7 +438,7 @@ Your machine never exposes any ports to the internet. No port forwarding, no
 firewall rules, no static IP required. Cloudflare handles TLS, DDoS
 protection, and (optionally) authentication via Access.
 
-### Why this works well for private alpha
+### Why this works well for a small private deployment
 
 - **Zero hosting cost** — run on hardware you already own
 - **Full capabilities** — Docker sandbox, filesystem, SQLite all work natively
@@ -542,7 +542,7 @@ Add an Access application for the API, the same way as the dashboard:
 1. In **Zero Trust → Access → Applications → Add an application**
 2. Choose **Self-hosted**
 3. Set **Application domain** to `api.yourdomain.com`
-4. Create the same **Alpha testers** policy (or reuse the existing one)
+4. Create the same **Allowed users** policy (or reuse the existing one)
 
 For programmatic API access (CLI tools, CI/CD), create a **service token**:
 
@@ -570,7 +570,7 @@ sudo systemctl start cloudflared
 This ensures the tunnel reconnects automatically on reboot or network
 interruption.
 
-### Recommended private alpha architecture
+### Recommended small private deployment
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -623,7 +623,7 @@ if using GitHub-connected builds.
 ## API Server Hosting with Fly.io
 
 [Fly.io](https://fly.io) is a platform that runs containers on servers close to
-your users. It offers a free tier that works well for private alpha deployments
+your users. It offers a free tier that works well for small private deployments
 — no credit card required to start.
 
 ### Why Fly.io works for Delegatron
@@ -948,7 +948,7 @@ Check the server log (`logs/server.log`, or under `DELEGATRON_LOG_DIR`) for `Usi
 
 E2B offers a free tier with limited compute hours. Check
 [e2b.dev/pricing](https://e2b.dev/pricing) for current limits. For private
-alpha with low run volume, the free tier is typically sufficient.
+deployment with low run volume, the free tier is typically sufficient.
 
 ### Switching between sandboxes
 

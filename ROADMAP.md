@@ -16,7 +16,7 @@ Features with code but no end-to-end verification. Hidden from UI until validate
   roles. Added two new presets: `local-oss` (gpt-oss implementer) and
   `local-oss-review` (gpt-oss reviewer + qwen2.5-coder implementer). All
   other candidates auto-`ollama rm`'d. Full report:
-  `_bench_2026_04_18/results/RESULTS.md` (gitignored).
+  a local benchmark report (not included).
 
 
 
@@ -32,7 +32,7 @@ Features with code but no end-to-end verification. Hidden from UI until validate
   opens on approved runs only; gracefully skips when `gh` CLI is missing
   or no remote is configured. 15 unit tests covering the gate logic,
   happy path, and failure modes. Real end-to-end verified 2026-04-17
-  against `borkit/testing` — opened PR #1 with code + pytest tests + the
+  against a private test repository — opened PR #1 with code + pytest tests + the
   full audit-summary body (plan, cost breakdown per role, review verdict,
   acceptance criteria). PR closed + branch deleted after verification.
   Known hygiene issue: `runs/` artifacts land in the PR (filed follow-up
@@ -185,15 +185,14 @@ Smarter orchestration and richer feedback loops.
 - [x] Quality benchmark mode — test role configurations empirically
 - [x] Project-level constraints (no_modify, required_patterns, forbidden_patterns)
 
-## Phase 4: Platform (delegatron.com)
+## Phase 4: Web interface
 
-Web interface and team features. Frontend on Cloudflare Pages, API backend on
-Cloudflare Workers or dedicated server.
+REST API, dashboard and team features for self-hosted use.
 
 - [x] REST API / webhook interface for triggering runs
 - [x] Web dashboard — run history, artifact viewer, cost analytics
 - [x] Real-time streaming of agent progress (SSE/WebSocket)
-- [x] GitHub App integration (trigger from issues/PRs)
+- [x] GitHub webhook integration (trigger from issue/PR comments)
 - [x] Team workspaces and API key management
 - [x] Run templates and saved configurations
 - [x] Plugin system for custom agents and tools
@@ -203,14 +202,14 @@ Cloudflare Workers or dedicated server.
 
 ## Phase 5: Scale
 
-Enterprise and advanced capabilities.
+Advanced capabilities for larger self-hosted setups.
 
 - [x] Queue-based execution with worker pools
 - [x] Multi-repo support
 - [x] Custom model routing (bring your own models)
 - [x] Self-organizing agent topology (dynamic agent addition)
 - [x] Benchmark suite and regression testing
-- [x] SOC 2 compliance and audit logging
+- [x] Append-only audit logging
 - [x] On-premise deployment option (Docker + Helm)
 
 ## Phase 6: Polish & Dashboard Parity

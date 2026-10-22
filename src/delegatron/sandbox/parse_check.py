@@ -6,7 +6,7 @@ BEFORE the sandbox spends time installing deps or running tests.
 Why this exists:
     Pester / pytest / jest idioms often dot-source or import individual
     functions, bypassing full-file parsing.  A file with `Set-StrictMode`
-    before `param()` (today's bug) parses fine when you call its functions
+    before `param()` (a real case) parses fine when you call its functions
     piecemeal but dies on `pwsh -File script.ps1`.  The reviewer sees a
     green test run and approves.  This gate closes that hole.
 

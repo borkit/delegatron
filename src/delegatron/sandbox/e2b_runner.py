@@ -6,6 +6,7 @@ and captures results as a TestReport.
 
 from __future__ import annotations
 
+import fnmatch
 import logging
 import shlex
 import time
@@ -53,6 +54,25 @@ def _upload_payload(content: str) -> str | bytes:
 
 # Patterns to ignore when uploading workspace files
 _IGNORE_PATTERNS = {".git", "__pycache__", ".venv", "venv", "node_modules", ".mypy_cache"}
+# Never upload credentials to the cloud sandbox.
+_SECRET_FILE_PATTERNS = (
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "id_rsa*",
+    "id_ed25519*",
+    "*.p12",
+    "*.pfx",
+)
+
+
+def _is_secret_file(name: str) -> bool:
+    """True for files that commonly hold credentials (``.env.example`` is allowed)."""
+    if name in (".env.example", ".env.sample", ".env.template"):
+        return False
+    return any(fnmatch.fnmatch(name, pattern) for pattern in _SECRET_FILE_PATTERNS)
+
 
 # Default E2B template for Python projects
 DEFAULT_TEMPLATE = "base"
@@ -332,6 +352,9 @@ class E2BSandbox(BaseSandbox):
             rel = path.relative_to(self._workspace_root).as_posix()
             parts = rel.split("/")
             if parts[0] in internal or any(part in _IGNORE_PATTERNS for part in parts):
+                continue
+            if _is_secret_file(path.name):
+                logger.info("Not uploading %s to E2B: looks like a credentials file", rel)
                 continue
 
             # Symlink validation: ensure resolved target is within workspace

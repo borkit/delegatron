@@ -1,4 +1,4 @@
-"""SOC 2 audit logging — immutable, queryable event log for compliance."""
+"""Audit logging — append-only, queryable event log."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ ACTIONS = [
 
 @dataclass
 class AuditEvent:
-    """A single auditable event conforming to SOC 2 logging requirements."""
+    """A single auditable event."""
 
     event_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())

@@ -26,7 +26,7 @@ src/delegatron/
     __init__.py             # Package root, version
     analytics.py            # Usage analytics — tracks pipeline run metrics
     artifacts.py            # Artifact store — persists run artifacts to disk
-    audit.py                # SOC 2 audit logging — immutable event log for compliance
+    audit.py                # Audit logging — append-only event log
     autoselect.py           # Automatic preset selection based on task complexity
     benchmark.py            # Quality benchmark — compare pipeline configs empirically
     benchmark_suite.py      # Regression benchmark suite for validating quality over time

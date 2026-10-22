@@ -355,7 +355,8 @@ class BaseSandbox(ABC):
     """Base interface for code execution sandboxes.
 
     Sandboxes apply patches, run tests, and return structured TestReports.
-    All execution happens in isolation — never on the host system.
+    Docker and E2B sandboxes isolate execution from the host; the local
+    sandbox does not and runs code directly on the host.
     """
 
     @abstractmethod

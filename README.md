@@ -1,4 +1,37 @@
-# Delegatron
+<p align="center">
+  <a href="https://delegatron.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.png">
+      <img src="docs/assets/wordmark-light.png" alt="Delegatron — Plan. Build. Test. Review. On your own hardware." width="560">
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  A multi-agent code pipeline: one model plans, another writes, a sandbox runs the tests and a
+  third reviews &mdash; with local or cloud models in any role.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-0f7a36"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-2563eb">
+  <img alt="Status: showcase, as-is" src="https://img.shields.io/badge/status-showcase%2C%20as--is-565c64">
+  <a href="https://delegatron.com"><img alt="Website: delegatron.com" src="https://img.shields.io/badge/web-delegatron.com-15181d"></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/hero.webp" alt="Delegatron dashboard showing a zero-cloud report: every LLM call, sandbox and artifact write of a run stayed on localhost." width="900">
+</p>
+
+<table>
+  <tr>
+    <td width="33%" valign="top"><img src="site/assets/shots/run-detail.webp" alt="Run detail page with seven iterations, their test results, review verdicts and cost."><br><b>Every iteration on the record</b><br><sub>Tests, review verdict and cost for each pass. Resume, retry or download the code.</sub></td>
+    <td width="33%" valign="top"><img src="site/assets/shots/new-run.webp" alt="New run form with local and cloud model presets."><br><b>Pick a model trio</b><br><sub>Local presets that fit one 12&nbsp;GB GPU, cloud presets, or your own mix.</sub></td>
+    <td width="33%" valign="top"><img src="site/assets/shots/templates.webp" alt="Template library with categories and variables."><br><b>Thirty templates</b><br><sub>REST APIs, CLI tools, audits and test suites, with variables filled in at launch.</sub></td>
+  </tr>
+</table>
+
+<p align="center"><sub>Screens from a real run on local models (phi4 and qwen2.5-coder 14B, Docker sandbox).</sub></p>
 
 ## Project status
 

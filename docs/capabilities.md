@@ -88,7 +88,7 @@ bugs when Ollama has a clean state:
 
 See [architect-plan-test.md](architect-plan-test.md) for details.
 
-### Local — Simple tasks (real E2E runs against borkit/testing)
+### Local — Simple tasks (real E2E runs against a test repository)
 
 | Task | Preset | Result | Cost | Iter |
 |---|---|---|---|---|
@@ -100,7 +100,7 @@ See [architect-plan-test.md](architect-plan-test.md) for details.
 
 ### GitHub PR creation — real end-to-end
 
-Validated 2026-04-17 against `borkit/testing`:
+Validated 2026-04-17 against a private test repository:
 - PR #1 (closed): fib.py + tests, full audit body
 - PR #2 (closed): sum_list + tests, 17 additions with no artifact bloat
 - PR #3 (closed): fib again, sanity check

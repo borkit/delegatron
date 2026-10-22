@@ -2619,7 +2619,7 @@ class Pipeline:
             }
             for finding in state.get("_security_blockers") or []
         )
-        # Paths the last apply refused (#110): nothing was written for them.
+        # Paths the last apply refused: nothing was written for them.
         issues.extend(
             {
                 "severity": "blocker",

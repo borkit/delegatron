@@ -499,7 +499,7 @@ def _is_install_dir(path: Path) -> bool:
     """Check if *path* is the Delegatron installation directory or its source tree.
 
     Blocks: the install dir itself, src/, tests/, dashboard/ — i.e. Delegatron's
-    own code.  Allows: dedicated workspace subdirectories like chess-workspace/
+    own code.  Allows: dedicated workspace subdirectories like my-workspace/
     that live under the install dir but are separate projects.
     """
     try:

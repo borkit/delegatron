@@ -180,9 +180,8 @@ async def run_architect(
         )
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        # We need to use SWEBenchAdapter but with custom config
-        # The adapter uses load_config(preset), so we monkey-patch by writing
-        # a temporary preset... actually, easier: override the run loop manually.
+        # SWEBenchAdapter loads its config from a preset, so the run loop is
+        # driven here directly with a custom config.
         from dataclasses import replace
 
         from delegatron.orchestrator.graph import Pipeline
@@ -301,9 +300,7 @@ async def run_architect(
             result.instances.append(inst_data)
             result.total_instances += 1
 
-            # Write progress after each instance
-            return_value = [result]
-            # Can't call write_progress here without all results, so just print
+            # Progress is printed per instance; the report is written at the end.
 
         if result.total_instances > 0:
             result.avg_iterations = total_iters / result.total_instances

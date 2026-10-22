@@ -428,6 +428,18 @@ class TestApplyAndTestWithMockSandbox:
         }
 
     @pytest.mark.asyncio
+    async def test_upload_skips_credential_files(self, tmp_path: Path) -> None:
+        for name in (".env", ".env.local", "server.pem", "tls.key", "id_rsa", "id_ed25519.pub"):
+            (tmp_path / name).write_bytes(b"secret\n")
+        (tmp_path / ".env.example").write_bytes(b"API_KEY=\n")
+        (tmp_path / "app.py").write_bytes(b"x = 1\n")
+
+        await E2BSandbox(workspace_root=tmp_path).apply_and_test({})
+
+        written = {call.args[0] for call in self._mock_sandbox.files.write.call_args_list}
+        assert written == {"/home/user/workspace/.env.example", "/home/user/workspace/app.py"}
+
+    @pytest.mark.asyncio
     async def test_commands_run_with_the_workspace_on_pythonpath(self, tmp_path: Path) -> None:
         await E2BSandbox(workspace_root=tmp_path).apply_and_test({"files": {"x.py": ""}})
         runs = [

@@ -124,7 +124,7 @@ def test_adr_prompt_section_names_the_prompt_every_local_preset_pins() -> None:
 
 def test_changelog_notes_the_new_local_default_and_unset_prompt_version() -> None:
     changelog = _read("CHANGELOG.md")
-    unreleased = changelog.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0]
+    unreleased = changelog.split("## [Public release]", 1)[1].split("\n## [", 1)[0]
 
     assert f"pins `prompt_version = {LOCAL_PROMPT_VERSION}`" in unreleased
     assert "every role of the `mock` preset" in unreleased

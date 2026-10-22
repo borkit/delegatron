@@ -5,9 +5,16 @@ All notable changes to Delegatron will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Public release] — 2026-10-22
+
+Published by StoriaBrevi LLC as a read-only portfolio showcase. No support; issues and pull requests are not accepted.
 
 ### Changed
+- **License: GNU AGPL-3.0** (was MIT). Copyright (C) 2026 StoriaBrevi LLC.
+- **Default Claude model is `claude-sonnet-5-5`.** `claude-sonnet-4-20250514` was retired on 2026-06-15. The Anthropic adapter leaves out `temperature` and forced `tool_choice` for models that reject them.
+- **`delegatron serve` binds to `127.0.0.1` by default.** Pass `--host 0.0.0.0` to expose it on the network.
+- **The E2B sandbox no longer uploads credential files** (`.env`, `*.pem`, `*.key`, SSH keys); `.env.example` is still uploaded.
+
 - **v5 prompts are the local default.** Every local preset (`local`, `local-phi4`, `local-heavy`, `local-oss`, `local-oss-review`) now pins `prompt_version = 5` for the architect, implementer and reviewer (was 4). The v5 implementer prompt ranks the evidence: failing tests are ground truth, reviewer notes are advice, and only one side of a failing assertion (the code or the test) changes per attempt.
 - **An unset `prompt_version` now resolves by endpoint.** A role whose `prompt_version` is unset or 0 (every role of the `mock` preset, and TOML roles that omit it) gets v5 on a local endpoint or the mock provider and v1 on a cloud API. It used to get the newest prompt file, v4, on every endpoint. v4 is unchanged: pin `prompt_version = 4` on a role to keep it.
 - **Multi-task runs deliver what they can; new `partial` status.** `max_iterations` is a budget per task. A task that stalls or runs out of iterations is skipped and the run continues with the next task (an exhausted task used to count as completed, and a stall ended the whole run); the tests it left failing are reported to later tasks as pre-existing. A run that approved some but not all of its tasks, or whose approved task's accepted test fails or is gone at the end, ends `partial` and opens no PR; a run a budget limit stopped stays `exhausted` and can be resumed. A stall names its reason (`no_progress`, `recurring_failure`, `recurring_issues`) in the `stall_detected` event and in the task's entry under `task_outcomes` in `summary.json`.
@@ -50,6 +57,8 @@ adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A git-URL workspace must be `https://`, `ssh://` or `user@host:path` (a bare `github.com/...` is cloned over https); option-like values, `ext::`/`file:` transports and plain `http://` URLs are rejected before git runs. The server also limits the host to `DELEGATRON_GIT_ALLOWED_HOSTS` (default `github.com,gitlab.com,bitbucket.org`).
 
 ### Removed
+- Billing and Stripe stubs, white-label branding, and the parked OpenClaw / NemoClaw integration.
+- The developer's personal test-VM and installer scripts (`scripts/`).
 - `utils/prompt_cache.py`: it was never called by any provider, so Delegatron has never done prompt caching (the 0.1.0 entry below was wrong), and its Anthropic and Gemini message shapes are rejected by those APIs
 
 ### 2026-04-17 session (summary)
@@ -68,7 +77,7 @@ adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Multi-milestone Project Mode (2/2 milestones approved, $0.0081)
 - Go / Rust / Java / PHP sandbox E2E runs (all approved with tests passing)
 - Fan-out parallel tasks (3 independent modules in concurrent worktrees)
-- Real GitHub PR creation against `borkit/testing` (4 PRs, all verified then closed)
+- Real GitHub PR creation against a private test repository (4 PRs, all verified then closed)
 - React + Vitest + Testing Library (local models, with framework hints)
 
 **Features wired from dead code:**

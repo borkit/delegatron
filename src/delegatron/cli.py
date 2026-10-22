@@ -1603,7 +1603,9 @@ def project(
 
 
 @main.command()
-@click.option("--host", default="0.0.0.0", help="Bind host.")
+@click.option(
+    "--host", default="127.0.0.1", help="Bind host (use 0.0.0.0 to expose on the network)."
+)
 @click.option("--port", default=8000, type=int, help="Bind port.")
 @click.option(
     "--workspace",

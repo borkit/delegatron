@@ -64,7 +64,7 @@ delegatron = "delegatron.cli:main"
 [project.urls]
 Homepage = "https://delegatron.com"
 Repository = "https://github.com/borkit/delegatron"
-Documentation = "https://delegatron.com/docs"
+Documentation = "https://github.com/borkit/delegatron/tree/main/docs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/delegatron"]

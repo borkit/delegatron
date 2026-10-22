@@ -207,7 +207,7 @@ class TestConnectionStrings:
         assert scan_patch(_make_patch([line])) == []
 
     def test_detects_mongodb_url(self) -> None:
-        patch = _make_patch(["MONGO = 'mongodb://admin:password@cluster.mongodb.net/prod'"])
+        patch = _make_patch(["MONGO = 'mongodb://admin:password@mongo.example.com/prod'"])
         findings = scan_patch(patch)
         assert any(f.pattern_name == "connection_string" for f in findings)
 
