@@ -130,7 +130,7 @@ class TestCostOptimizedStrategy:
         endpoints[0].is_available = False  # cheap_endpoint
         router = ModelRouter(endpoints, RoutingStrategy.COST_OPTIMIZED)
         result = router.select("reviewer")
-        assert result is not endpoints[0]
+        assert result is fast_endpoint
 
     def test_weight_affects_cost_ranking(self) -> None:
         ep1 = _make_endpoint(model="a", cost_in=0.10, cost_out=0.10, weight=1.0)

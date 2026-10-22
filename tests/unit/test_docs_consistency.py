@@ -13,6 +13,7 @@ import importlib
 import inspect
 import json
 import re
+import tomllib
 from pathlib import Path
 from typing import Any, cast
 
@@ -124,11 +125,11 @@ def test_adr_prompt_section_names_the_prompt_every_local_preset_pins() -> None:
 
 def test_changelog_notes_the_new_local_default_and_unset_prompt_version() -> None:
     changelog = _read("CHANGELOG.md")
-    unreleased = changelog.split("## [Public release]", 1)[1].split("\n## [", 1)[0]
+    public_release = changelog.split("## [Public release]", 1)[1].split("\n## [", 1)[0]
 
-    assert f"pins `prompt_version = {LOCAL_PROMPT_VERSION}`" in unreleased
-    assert "every role of the `mock` preset" in unreleased
-    assert "v5 on a local endpoint or the mock provider and v1 on a cloud API" in unreleased
+    assert f"pins `prompt_version = {LOCAL_PROMPT_VERSION}`" in public_release
+    assert "every role of the `mock` preset" in public_release
+    assert "v5 on a local endpoint or the mock provider and v1 on a cloud API" in public_release
     # ...which is what the resolver does for a role that leaves it unset.
     assert resolve_prompt_version(RoleConfig(provider="mock", model="m")) == 5
     assert resolve_prompt_version(RoleConfig(provider="anthropic", model="m")) == 1
@@ -413,3 +414,39 @@ def test_capabilities_describes_info_exclude_for_every_internal_dir() -> None:
     assert "`.git/info/exclude`" in bullet
     for name in INTERNAL_DIRS:
         assert f"`{name}/`" in bullet, name
+
+
+# ── Public release: removed features stay out of the docs; one license ─────
+
+
+def _current_docs() -> list[str]:
+    """README, CLAUDE.md, AGENTS.md and docs/ (the CHANGELOG records history and is excluded)."""
+    docs = sorted(p.relative_to(REPO_ROOT).as_posix() for p in (REPO_ROOT / "docs").rglob("*.md"))
+    return ["README.md", "CLAUDE.md", "AGENTS.md", *docs]
+
+
+@pytest.mark.parametrize("rel", _current_docs())
+def test_removed_features_are_not_documented(rel: str) -> None:
+    mentions = re.findall(r"(?i)billing|white[- ]?label|openclaw", _read(rel))
+    assert mentions == [], f"{rel} mentions removed features: {sorted(set(mentions))}"
+
+
+def test_license_is_agpl_3_only_everywhere() -> None:
+    license_text = _read("LICENSE")
+    assert license_text.split("\n", 1)[0].strip() == "GNU AFFERO GENERAL PUBLIC LICENSE"
+    assert "Version 3, 19 November 2007" in license_text
+
+    project = tomllib.loads(_read("pyproject.toml"))["project"]
+    assert project["license"] == {"text": "AGPL-3.0-only"}
+    license_classifiers = [c for c in project["classifiers"] if c.startswith("License ::")]
+    assert license_classifiers == [
+        "License :: OSI Approved :: GNU Affero General Public License v3"
+    ]
+
+    readme = _read("README.md")
+    section = _section(readme, "## License")
+    assert "GNU Affero General Public License" in section
+    assert "version 3." in section
+    assert "any later version" not in section  # -only, not -or-later
+    assert "license-AGPL--3.0-" in readme  # the badge
+    assert not re.search(r"(?i)\bMIT License\b|Apache License", readme)

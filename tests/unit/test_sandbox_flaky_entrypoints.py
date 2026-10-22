@@ -115,9 +115,8 @@ class TestPerTestFields:
         assert results[SHUFFLE].error == "AssertionError: assert [1, 2, 3] != [1, 2, 3]"
         assert results[SIZE].error == "assert 4 == 5"
         dumped = {r.name: r.model_dump() for r in results.values()}
-        if "status" in dumped[SHUFFLE]:  # schema field (AGENTCORE)
-            assert dumped[SHUFFLE]["status"] == "failed"
-            assert dumped["tests/test_deck.py::test_deal"]["status"] == "passed"
+        assert dumped[SHUFFLE]["status"] == "failed"
+        assert dumped["tests/test_deck.py::test_deal"]["status"] == "passed"
 
     def test_collection_error_carries_its_error(self) -> None:
         output = (
@@ -920,7 +919,9 @@ class TestLocalEntrypoints:
         grandchild = int(result.stdout_head.split()[0])
         assert _gone(grandchild)
 
-    async def test_real_pytest_rerun_and_entrypoint(self, tmp_path: Path) -> None:
+    async def test_real_pytest_rerun_and_entrypoint(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """One cheap end-to-end run: a flaky test, a real failure and a script."""
         flaky_test = (
             "from pathlib import Path\n\n\n"
@@ -934,6 +935,10 @@ class TestLocalEntrypoints:
             "def test_ok():\n"
             "    pass\n"
         )
+        # ``python`` is this interpreter, not whichever comes first on PATH.  (The
+        # command keeps the bare name: a rerun only mirrors plain program names.)
+        path = os.environ.get("PATH", "")
+        monkeypatch.setenv("PATH", os.path.dirname(sys.executable) + os.pathsep + path)
         sandbox = _local_sandbox(tmp_path, run_entrypoints=True)
 
         report = await sandbox.apply_and_test(

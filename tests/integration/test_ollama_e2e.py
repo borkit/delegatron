@@ -1,8 +1,9 @@
 """End-to-end tests with Ollama presets on real tasks.
 
 Validates the full pipeline flow using Ollama preset configurations with
-a mocked HTTP backend — no real Ollama instance required. Covers:
-- Preset loading and v2 prompt selection
+a mocked HTTP backend and the stub sandbox (tests/conftest.py) — no real
+Ollama instance or Docker required. Covers:
+- Preset loading and the pinned local prompts (v5)
 - Provider creation with OpenAI-compatible adapter
 - Full architect → implementer → sandbox → reviewer loop
 - JSON object response format (not json_schema)
@@ -11,6 +12,7 @@ a mocked HTTP backend — no real Ollama instance required. Covers:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -32,12 +34,12 @@ from delegatron.orchestrator.graph import Pipeline
 def mock_workspace(tmp_path: Path) -> Path:
     """Create a minimal git-initialised Python project for Ollama E2E tests."""
     env = {
+        **os.environ,
         "GIT_AUTHOR_NAME": "Test",
         "GIT_AUTHOR_EMAIL": "test@test.com",
         "GIT_COMMITTER_NAME": "Test",
         "GIT_COMMITTER_EMAIL": "test@test.com",
         "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
     }
 
     subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True, env=env)
@@ -147,12 +149,15 @@ def _ollama_config(preset_name: str) -> Config:
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_ollama_coder_preset_full_pipeline(mock_workspace: Path) -> None:
-    """Run full pipeline with local-fast preset and mocked HTTP backend."""
+@pytest.mark.parametrize("preset_name", ["local", "local-phi4", "local-heavy"])
+async def test_ollama_preset_full_pipeline(
+    mock_workspace: Path, sandbox_runs: list[dict[str, Any]], preset_name: str
+) -> None:
+    """Run the full pipeline with a local preset, a mocked HTTP backend and a stub sandbox."""
     call_count: dict[str, int] = {}
     mock_create = _build_mock_generate(call_count)
 
-    config = _ollama_config("local")
+    config = _ollama_config(preset_name)
 
     with (
         patch("delegatron.agents.providers.openai_provider._HAS_OPENAI", True),
@@ -165,16 +170,20 @@ async def test_ollama_coder_preset_full_pipeline(mock_workspace: Path) -> None:
         pipeline = Pipeline(
             config=config,
             workspace_root=mock_workspace,
-            run_id="ollama-e2e-coder-001",
+            run_id=f"ollama-e2e-{preset_name}",
         )
         state = await pipeline.execute("Add a GET /health endpoint that returns status")
 
-    assert state["status"] in ("approved", "partial", "exhausted", "stalled")
-    assert state["plan"] is not None
-    assert len(state["plan"]["tasks"]) > 0
-    assert state["iteration"] >= 1
-    # Ollama models are tracked as free ($0), so cost may be zero
-    assert state["total_cost_usd"] >= 0
+    assert state["status"] == "partial", state.get("_termination_reason")
+    assert state["iteration"] == 4
+    assert len(state["plan"]["tasks"]) == len(MOCK_WORK_PLAN["tasks"])
+    # Ollama models have no API cost; only the local GPU estimate (electricity and
+    # amortization over the generation time, so timing-dependent) can add to it.
+    assert 0 <= state["total_cost_usd"] < 0.01
+    assert sandbox_runs, "the stub sandbox never ran a patch"
+    models = {call.kwargs["model"] for call in mock_create.call_args_list}
+    roles = PRESETS[preset_name]
+    assert models == {roles[role]["model"] for role in ("architect", "implementer", "reviewer")}
 
     events = [m.get("event") for m in state["messages"] if "event" in m]
     assert "architect_complete" in events
@@ -182,71 +191,14 @@ async def test_ollama_coder_preset_full_pipeline(mock_workspace: Path) -> None:
     assert "reviewer_complete" in events
 
 
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_ollama_mix_preset_full_pipeline(mock_workspace: Path) -> None:
-    """Run full pipeline with local preset (different model per role)."""
-    call_count: dict[str, int] = {}
-    mock_create = _build_mock_generate(call_count)
-
-    config = _ollama_config("local")
-
-    with (
-        patch("delegatron.agents.providers.openai_provider._HAS_OPENAI", True),
-        patch("delegatron.agents.providers.openai_provider.openai") as mock_openai,
-    ):
-        mock_client = MagicMock()
-        mock_client.chat.completions.create = mock_create
-        mock_openai.AsyncOpenAI.return_value = mock_client
-
-        pipeline = Pipeline(
-            config=config,
-            workspace_root=mock_workspace,
-            run_id="ollama-e2e-mix-001",
-        )
-        state = await pipeline.execute("Add user authentication with JWT tokens")
-
-    assert state["status"] in ("approved", "partial", "exhausted", "stalled")
-    assert state["plan"] is not None
-    assert state["iteration"] >= 1
-
-
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_ollama_fast_preset_full_pipeline(mock_workspace: Path) -> None:
-    """Run full pipeline with local-fast preset (lightweight 8B models)."""
-    call_count: dict[str, int] = {}
-    mock_create = _build_mock_generate(call_count)
-
-    config = _ollama_config("local")
-
-    with (
-        patch("delegatron.agents.providers.openai_provider._HAS_OPENAI", True),
-        patch("delegatron.agents.providers.openai_provider.openai") as mock_openai,
-    ):
-        mock_client = MagicMock()
-        mock_client.chat.completions.create = mock_create
-        mock_openai.AsyncOpenAI.return_value = mock_client
-
-        pipeline = Pipeline(
-            config=config,
-            workspace_root=mock_workspace,
-            run_id="ollama-e2e-fast-001",
-        )
-        state = await pipeline.execute("Fix a simple typo in the README")
-
-    assert state["status"] in ("approved", "partial", "exhausted", "stalled")
-    assert state["plan"] is not None
-
-
 # ---------------------------------------------------------------------------
-# V2 prompt and response format verification
+# Prompt version and response format verification
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.integration
-def test_ollama_preset_uses_v2_prompts() -> None:
-    """Verify all local presets specify prompt_version >= 3."""
+def test_local_presets_pin_prompt_version_5() -> None:
+    """Every local preset pins the current local prompts (v5) for every role."""
     ollama_presets = {k: v for k, v in PRESETS.items() if k.startswith("local")}
     assert len(ollama_presets) >= 2, "Expected at least 2 local presets"
 
@@ -254,9 +206,9 @@ def test_ollama_preset_uses_v2_prompts() -> None:
         for role_name in ("architect", "implementer", "reviewer"):
             role_data = roles.get(role_name, {})
             version = role_data.get("prompt_version", 0)
-            assert version >= 3, (
+            assert version == 5, (
                 f"Preset {preset_name!r} role {role_name!r} "
-                f"has prompt_version={version}, expected >= 3"
+                f"has prompt_version={version}, expected 5"
             )
 
 

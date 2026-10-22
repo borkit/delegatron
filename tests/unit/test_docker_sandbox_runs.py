@@ -295,6 +295,10 @@ class TestToolchainSelection:
         assert "not available" not in report["stderr"]
         [install] = fake_docker.runs("install")
         assert install[-1] == CMAKE_TOOLCHAIN_INSTALL
+        [test] = fake_docker.runs("test")
+        assert "--network" in test and "none" in test
+        assert test[-1].endswith("ctest --test-dir build --no-tests=error")
+        assert report["passed"] is True
 
     def test_windows_image_gets_no_apt_install(
         self,
@@ -962,6 +966,29 @@ class TestStagePatch:
         assert (tmp_path / "tests" / "test_a.py").read_text() == "new\n"
         assert staged.files == {"tests/test_a.py": "new\n"}
         assert staged.skipped == []
+
+    def test_a_path_through_a_symlink_out_of_the_sandbox_is_skipped(self, tmp_path: Path) -> None:
+        sandbox_dir = tmp_path / "ws"
+        outside = tmp_path / "outside"
+        sandbox_dir.mkdir()
+        outside.mkdir()
+        (outside / "victim.py").write_text("keep\n")
+        try:
+            os.symlink(outside, sandbox_dir / "out", target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pytest.skip("symlinks are not available")
+
+        with pytest.raises(ValueError, match="escapes sandbox"):
+            _validate_sandbox_path(sandbox_dir, "out/new.py")
+        staged = DockerSandbox._stage_patch(
+            sandbox_dir,
+            {"files": {"out/new.py": "x\n", "a.py": "a\n"}, "delete_files": ["out/victim.py"]},
+        )
+
+        assert staged.skipped == ["out/new.py", "out/victim.py"]
+        assert staged.files == {"a.py": "a\n"}
+        assert sorted(p.name for p in outside.iterdir()) == ["victim.py"]
+        assert (outside / "victim.py").read_text() == "keep\n"
 
     def test_deleting_a_missing_file_is_a_no_op(self, tmp_path: Path) -> None:
         staged = DockerSandbox._stage_patch(tmp_path, {"delete_files": ["gone.py"]})

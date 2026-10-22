@@ -292,6 +292,47 @@ class TestAuditMiddleware:
         assert events[0].actor == "anonymous"
         assert events[0].ip_address is None
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("params", "expected"),
+        [
+            ({"token": "TOKVAL", "page": "2"}, "/api/runs/r1/stream?page=2"),
+            (
+                {
+                    "key": "KEYVAL",
+                    "Secret": "SECVAL",
+                    "sig": "SIGVAL",
+                    "api_key": "APIVAL",
+                    "page": "2",
+                    "q": "y",
+                },
+                "/api/runs/r1/stream?page=2&q=y",
+            ),
+            ({"token": "TOKVAL", "SIG": "SIGVAL"}, "/api/runs/r1/stream"),
+        ],
+    )
+    async def test_dispatch_strips_sensitive_query_params(
+        self, tmp_path: Path, params: dict[str, str], expected: str
+    ) -> None:
+        audit_logger = AuditLogger(tmp_path / "audit.jsonl")
+        middleware = AuditMiddleware(MagicMock(), audit_logger=audit_logger)
+
+        request = MagicMock()
+        request.headers = {}
+        request.query_params = params
+        request.client = None
+        request.method = "GET"
+        request.url.path = "/api/runs/r1/stream"
+
+        response = MagicMock()
+        response.status_code = 200
+        await middleware.dispatch(request, AsyncMock(return_value=response))
+
+        [event] = audit_logger.query()
+        assert event.resource_id == expected
+        for secret in ("TOKVAL", "KEYVAL", "SECVAL", "SIGVAL", "APIVAL"):
+            assert secret not in json.dumps(event.to_dict())
+
 
 # ---------------------------------------------------------------------------
 # Module constants

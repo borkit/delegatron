@@ -223,14 +223,15 @@ class TestResolveWorkspace:
 
         with (
             patch("delegatron.repo_resolve.RepoManager", return_value=mock_manager),
-            patch("delegatron.repo_resolve.RepoConfig"),
+            patch("delegatron.repo_resolve.RepoConfig") as mock_config_cls,
         ):
             path, _cleanup = resolve_workspace(
                 "git@github.com:org/repo.git",
                 base_dir=tmp_path,
             )
 
-        mock_manager.add_repo.assert_called_once()
+        mock_config_cls.assert_called_once_with(repo_url="git@github.com:org/repo.git", branch=None)
+        mock_manager.add_repo.assert_called_once_with(mock_config_cls.return_value)
         assert path == tmp_path / "ssh-clone"
 
     def test_bare_host_is_cloned_over_https_with_remote_default_branch(self, tmp_path: Path):

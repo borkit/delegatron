@@ -179,14 +179,11 @@ class TestRun:
 
     async def test_timeout_returns_error(self, sandbox: LocalSandbox, tmp_path: Path):
         """When a command times out, we get rc=1 and a timeout message."""
-        # Patch _CMD_TIMEOUT to something very short
-        with patch("delegatron.sandbox.local_runner._CMD_TIMEOUT", 0.001):
-            # Use a command that hangs
-            rc, _stdout, stderr = await sandbox._run("sleep 60")
-            # Should be killed — either timeout or general exception
-            assert rc == 1
-            # stderr should indicate timeout or error
-            assert stderr != ""
+        hang = f'"{sys.executable}" -c "import time; time.sleep(60)"'
+        with patch("delegatron.sandbox.local_runner._CMD_TIMEOUT", 0.5):
+            rc, _stdout, stderr = await sandbox._run(hang)
+        assert rc == 1
+        assert stderr == "Command timed out"
 
     async def test_exception_returns_error(self, sandbox: LocalSandbox):
         """If create_subprocess_shell raises, we get rc=1."""
@@ -733,6 +730,24 @@ class TestStagingSafety:
             pytest.skip("symlinks are not available")
         assert _make_sandbox(tmp_path)._resolve("meta/config") is None
         assert _make_sandbox(tmp_path)._resolve("src/app.py") is not None
+
+    async def test_a_path_through_a_symlink_out_of_the_workspace_is_refused(self, tmp_path: Path):
+        ws = tmp_path / "ws"
+        outside = tmp_path / "outside"
+        ws.mkdir()
+        outside.mkdir()
+        try:
+            os.symlink(outside, ws / "out", target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pytest.skip("symlinks are not available")
+        sandbox = _without_venv(_make_sandbox(ws))
+        _recording_run(sandbox, {})
+
+        assert sandbox._resolve("out/new.py") is None
+        result = await sandbox.apply_and_test({"files": {"out/new.py": "x\n", "a.py": "a\n"}})
+
+        assert result["stderr"].startswith("Skipped unsafe patch path(s): out/new.py\n")
+        assert list(outside.iterdir()) == []
 
     async def test_non_text_content_is_skipped(self, tmp_path: Path):
         sandbox = _without_venv(_make_sandbox(tmp_path))

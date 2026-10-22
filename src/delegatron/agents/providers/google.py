@@ -32,6 +32,9 @@ from delegatron.agents.providers.base import (
     token_count,
 )
 
+# Sent when a role has no key, so the SDK never falls back to an environment key.
+NO_API_KEY = "no-api-key"
+
 
 class GoogleProvider(BaseProvider):
     """Provider adapter for Google's Gemini API.
@@ -52,9 +55,16 @@ class GoogleProvider(BaseProvider):
                 "Google GenAI SDK not installed. Install with: pip install google-genai"
             )
         # The SDK does not retry unless retry_options are set; its timeout is in ms.
+        http_options = types.HttpOptions(timeout=int(timeout_seconds * 1000))
+        if base_url:
+            http_options.base_url = base_url
+        # Never an empty key: the SDK then reads GOOGLE_API_KEY / GEMINI_API_KEY
+        # itself, which would bypass the env-key policy (RoleConfig.resolve_api_key).
+        # vertexai=False keeps GOOGLE_GENAI_USE_VERTEXAI from switching backends.
         self._client = genai.Client(
-            api_key=api_key,
-            http_options=types.HttpOptions(timeout=int(timeout_seconds * 1000)),
+            api_key=api_key or NO_API_KEY,
+            vertexai=False,
+            http_options=http_options,
         )
         self._model = model
         self._timeout_seconds = timeout_seconds

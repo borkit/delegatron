@@ -109,8 +109,9 @@ asyncio_mode = "auto"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
     "slow: marks tests as slow (runs full pipeline, ~60s+). Excluded by default.",
+    "live: calls real services (paid provider APIs, Ollama, Docker). Excluded by default.",
 ]
-addopts = "-m 'not slow'"
+addopts = "-m 'not slow and not live'"
 
 [tool.coverage.run]
 source = ["delegatron"]

@@ -53,7 +53,8 @@ class TestNodeProjects:
         hints = build_framework_hints(tmp_path)
         joined = "\n".join(hints)
         assert "jest-dom" in joined
-        assert "toBeInTheDocument" in joined.lower() or "vitest.setup" in joined.lower()
+        assert "toBeInTheDocument" in joined
+        assert "vitest.setup.ts" in joined
 
     def test_missing_user_event_produces_warning(self, tmp_path: Path) -> None:
         """Vitest project WITHOUT user-event installed — hint should say

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -426,6 +427,32 @@ class TestApplyAndTestWithMockSandbox:
             "/home/user/workspace/app/runs/job.py": "y = 2\r\n",  # line endings kept
             "/home/user/workspace/cards.py": "NAME = 'Pokémon ✓'\n",
         }
+
+    @pytest.mark.asyncio
+    async def test_upload_skips_symlinks_out_of_the_workspace(self, tmp_path: Path) -> None:
+        ws = tmp_path / "ws"
+        outside = tmp_path / "outside"
+        ws.mkdir()
+        outside.mkdir()
+        (outside / "secret.py").write_bytes(b"TOKEN = 'x'\n")
+        (ws / "app.py").write_bytes(b"x = 1\n")
+        try:
+            os.symlink(outside, ws / "out", target_is_directory=True)
+            os.symlink(outside / "secret.py", ws / "leak.py")
+            os.symlink(ws / "app.py", ws / "alias.py")  # stays inside: uploaded
+        except (OSError, NotImplementedError):
+            pytest.skip("symlinks are not available")
+
+        await E2BSandbox(workspace_root=ws).apply_and_test({})
+
+        written = {
+            call.args[0]: call.args[1] for call in self._mock_sandbox.files.write.call_args_list
+        }
+        assert written == {
+            "/home/user/workspace/alias.py": "x = 1\n",
+            "/home/user/workspace/app.py": "x = 1\n",
+        }
+        assert not any("out" in cmd for cmd in _commands(self._mock_sandbox) if "mkdir" in cmd)
 
     @pytest.mark.asyncio
     async def test_upload_skips_credential_files(self, tmp_path: Path) -> None:

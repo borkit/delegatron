@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -197,8 +198,7 @@ class TestGetInstallCommands:
     def test_pip_with_requirements_txt(self, tmp_path: Path):
         """pip + requirements.txt should generate pip install -r."""
         (tmp_path / "requirements.txt").write_text("flask>=2.0\n")
-        project_info = MagicMock()
-        project_info.package_manager = "pip"
+        project_info = SimpleNamespace(package_manager="pip")
         commands = get_install_commands(project_info, tmp_path)
         assert any("requirements.txt" in c for c in commands)
         assert any("pytest" in c for c in commands)
@@ -206,8 +206,7 @@ class TestGetInstallCommands:
     def test_pip_with_pyproject_toml(self, tmp_path: Path):
         """pip + pyproject.toml should generate pip install -e ."""
         (tmp_path / "pyproject.toml").write_text("[build-system]\n")
-        project_info = MagicMock()
-        project_info.package_manager = "pip"
+        project_info = SimpleNamespace(package_manager="pip")
         commands = get_install_commands(project_info, tmp_path)
         assert any("pip install -e ." in c for c in commands)
         assert any("pytest" in c for c in commands)
@@ -216,82 +215,69 @@ class TestGetInstallCommands:
         """pip + pyproject.toml with test extra should use .[test]."""
         toml_content = '[project.optional-dependencies]\ntest = ["pytest", "hypothesis"]\n'
         (tmp_path / "pyproject.toml").write_text(toml_content)
-        project_info = MagicMock()
-        project_info.package_manager = "pip"
+        project_info = SimpleNamespace(package_manager="pip")
         commands = get_install_commands(project_info, tmp_path)
         assert any(".[test]" in c for c in commands)
 
     def test_pip_no_config_files(self, tmp_path: Path):
         """pip with no config files should just install pytest."""
-        project_info = MagicMock()
-        project_info.package_manager = "pip"
+        project_info = SimpleNamespace(package_manager="pip")
         commands = get_install_commands(project_info, tmp_path)
         assert any("pytest" in c for c in commands)
 
     def test_npm(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "npm"
+        project_info = SimpleNamespace(package_manager="npm")
         commands = get_install_commands(project_info, tmp_path)
         assert "npm install" in commands
 
     def test_yarn(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "yarn"
+        project_info = SimpleNamespace(package_manager="yarn")
         commands = get_install_commands(project_info, tmp_path)
         assert "yarn install" in commands
 
     def test_pnpm(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "pnpm"
+        project_info = SimpleNamespace(package_manager="pnpm")
         commands = get_install_commands(project_info, tmp_path)
         assert "pnpm install" in commands
 
     def test_bun(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "bun"
+        project_info = SimpleNamespace(package_manager="bun")
         commands = get_install_commands(project_info, tmp_path)
         assert "bun install" in commands
 
     def test_dotnet(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "dotnet"
+        project_info = SimpleNamespace(package_manager="dotnet")
         commands = get_install_commands(project_info, tmp_path)
         assert "dotnet restore" in commands
 
     def test_go(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "go"
+        project_info = SimpleNamespace(package_manager="go")
         commands = get_install_commands(project_info, tmp_path)
         assert "go mod download" in commands
 
     def test_cargo(self, tmp_path: Path):
         """Cargo fetches crates while the install phase has network (tests run offline)."""
-        project_info = MagicMock()
-        project_info.package_manager = "cargo"
+        project_info = SimpleNamespace(package_manager="cargo")
         commands = get_install_commands(project_info, tmp_path)
         assert commands == ["cargo fetch"]
 
     def test_maven(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "maven"
+        project_info = SimpleNamespace(package_manager="maven")
         commands = get_install_commands(project_info, tmp_path)
         assert any("mvn" in c for c in commands)
 
     def test_gradle(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "gradle"
+        project_info = SimpleNamespace(package_manager="gradle")
         commands = get_install_commands(project_info, tmp_path)
         assert any("gradle" in c for c in commands)
 
     def test_bundler(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "bundler"
+        project_info = SimpleNamespace(package_manager="bundler")
         commands = get_install_commands(project_info, tmp_path)
         assert "bundle install" in commands
 
     def test_composer(self, tmp_path: Path):
-        project_info = MagicMock()
-        project_info.package_manager = "composer"
+        project_info = SimpleNamespace(package_manager="composer")
         commands = get_install_commands(project_info, tmp_path)
         assert "composer install" in commands
 
@@ -302,8 +288,7 @@ class TestGetInstallCommands:
 
     def test_no_package_manager(self, tmp_path: Path):
         """Project info with no package_manager should install pytest."""
-        project_info = MagicMock()
-        project_info.package_manager = None
+        project_info = SimpleNamespace(package_manager=None)
         commands = get_install_commands(project_info, tmp_path)
         assert any("pytest" in c for c in commands)
 
@@ -311,7 +296,6 @@ class TestGetInstallCommands:
         """Test extra using 'test=' format (no space before equals)."""
         toml_content = '[project.optional-dependencies]\ntest=["pytest"]\n'
         (tmp_path / "pyproject.toml").write_text(toml_content)
-        project_info = MagicMock()
-        project_info.package_manager = "pip"
+        project_info = SimpleNamespace(package_manager="pip")
         commands = get_install_commands(project_info, tmp_path)
         assert any(".[test]" in c for c in commands)

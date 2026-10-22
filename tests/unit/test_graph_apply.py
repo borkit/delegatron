@@ -13,6 +13,7 @@ failures that must not un-apply a patch (#88); deletions (#109); unsafe paths
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -77,6 +78,7 @@ def _git(cwd: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "user.name=Test", "-c", "user.email=test@test.com", *args],
         cwd=cwd,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},  # no global hooks/signing
         capture_output=True,
         text=True,
         check=True,
@@ -132,6 +134,8 @@ class TestApplyToGitWorkspace:
     @pytest.fixture
     def git_repo(self, tmp_path: Path) -> Path:
         env = {
+            **os.environ,
+            "GIT_CONFIG_GLOBAL": os.devnull,  # no global hooks/signing
             "GIT_AUTHOR_NAME": "Test",
             "GIT_AUTHOR_EMAIL": "test@test.com",
             "GIT_COMMITTER_NAME": "Test",

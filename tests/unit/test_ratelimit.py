@@ -104,11 +104,27 @@ class TestRateLimiter:
             assert result.allowed is True
 
     def test_record_end_idempotent(self) -> None:
-        limiter = RateLimiter(RateLimitConfig())
+        limiter = RateLimiter(RateLimitConfig(max_concurrent_runs=2))
         limiter.record_start("user1", "run-1")
         limiter.record_end("user1", "run-1", cost=1.0)
         # Ending again should not raise
         limiter.record_end("user1", "run-1", cost=0.0)
+
+        # The concurrency count did not go below zero: two new runs fill both slots.
+        limiter.record_start("user1", "run-2")
+        assert limiter.check("user1").allowed is True
+        limiter.record_start("user1", "run-3")
+        result = limiter.check("user1")
+        assert result.allowed is False
+        assert result.reason is not None and "concurrent" in result.reason
+
+    def test_record_end_twice_does_not_double_count_cost(self) -> None:
+        limiter = RateLimiter(RateLimitConfig(max_cost_per_hour_usd=1.5))
+        limiter.record_start("user1", "run-1")
+        limiter.record_end("user1", "run-1", cost=1.0)
+        limiter.record_end("user1", "run-1", cost=1.0)
+
+        assert limiter.check("user1").allowed is True
 
     def test_cost_accumulates_within_window(self) -> None:
         limiter = RateLimiter(RateLimitConfig(max_cost_per_hour_usd=10.0))

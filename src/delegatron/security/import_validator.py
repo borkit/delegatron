@@ -782,20 +782,8 @@ def _rust_validate(
 # Java (best-effort: groupId/artifactId don't map cleanly to import paths)
 # =============================================================================
 
-# JDK / platform packages — always available.  Not exhaustive; covers
-# everything a local model is likely to pull in.
-_JAVA_JDK_PREFIXES = (
-    "java.",
-    "javax.",
-    "jdk.",
-    "sun.",
-    "com.sun.",
-    "org.w3c.dom",
-    "org.xml.sax",
-    "org.ietf.jgss",
-)
-
-# Common test/util packages that ship via well-known Maven artifacts.
+# Common test/util packages that ship via well-known Maven artifacts.  Only
+# these are ever flagged, so JDK packages (java., javax., ...) never are.
 # Map import-prefix → artifactId (for the hint only — we don't strictly
 # require the artifact is present since Java imports don't cleanly resolve).
 _JAVA_WELL_KNOWN = {
@@ -842,8 +830,6 @@ def _java_validate(
         if not rel_path.endswith(".java"):
             continue
         for fqcn in _extract_java_imports(content):
-            if fqcn.startswith(_JAVA_JDK_PREFIXES):
-                continue
             matched_artifact = None
             for prefix, artifact in _JAVA_WELL_KNOWN.items():
                 if fqcn.startswith(prefix):

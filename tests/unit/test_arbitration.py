@@ -399,3 +399,36 @@ def test_apply_arbitration_ignores_a_ruling_with_an_unknown_title():
         assert result["review_report"]["issues"] == [issue]
         assert result["review_report"]["acceptance_met"] is False
         assert result["is_approved"] is False
+
+
+def test_apply_arbitration_never_approves_an_unapplied_patch():
+    """Passing tests and a resolved review still need the patch on the workspace."""
+    for applied in (False, None):
+        state = {
+            "review_report": {"issues": [{"title": "A", "severity": "major"}]},
+            "test_report": {"passed": True, "total": 3},
+            "is_approved": False,
+        }
+        if applied is not None:
+            state["patch_applied"] = applied
+        result = apply_arbitration(state, [{"title": "A", "decision": "ACCEPT"}])
+        assert result["review_report"]["issues"] == []
+        assert result["is_approved"] is False
+        assert result["review_report"].get("acceptance_met") is not True
+
+
+def test_apply_arbitration_never_approves_while_another_major_issue_remains():
+    other = {"title": "B", "severity": "major", "details": "d"}
+    state = {
+        "review_report": {
+            "issues": [{"title": "A", "severity": "major"}, dict(other)],
+            "acceptance_met": False,
+        },
+        "test_report": {"passed": True, "total": 3},
+        "patch_applied": True,
+        "is_approved": False,
+    }
+    result = apply_arbitration(state, [{"title": "A", "decision": "ACCEPT"}])
+    assert result["review_report"]["issues"] == [other]
+    assert result["review_report"]["acceptance_met"] is False
+    assert result["is_approved"] is False

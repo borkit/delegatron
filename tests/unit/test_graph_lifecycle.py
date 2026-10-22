@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import os
 import subprocess
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -125,6 +126,11 @@ class _Agents:
         return sum(1 for called, _ in self.calls if called == role)
 
 
+# Every call costs $2 (one million gpt-4.1 input tokens).
+_PRICED_CALL = {"model": "gpt-4.1", "input_tokens": 1_000_000, "output_tokens": 0}
+_PRICED = {role: _PRICED_CALL for role in ("architect", "implementer", "reviewer")}
+
+
 class _Sandbox:
     def __init__(self) -> None:
         self.reports: Callable[[int], dict[str, Any]] = lambda n: PASSED
@@ -197,6 +203,7 @@ def _git(cwd: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "user.name=T", "-c", "user.email=t@t", *args],
         cwd=cwd,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},  # no global hooks/signing
         capture_output=True,
         text=True,
         check=True,
@@ -816,7 +823,7 @@ class TestStopReasons:
         assert summary["iterations"] == 1
         assert summary["termination_reason"] == "Wall time limit (5min) reached"
 
-    async def test_budget_and_per_task_stops_are_on_record(
+    async def test_an_iteration_limit_stop_is_on_record(
         self, tmp_path: Path, harness: SimpleNamespace
     ) -> None:
         harness.use(_Agents(_plan("t1"), review=lambda d, n: REJECT))
@@ -828,6 +835,21 @@ class TestStopReasons:
         [terminated] = [e for e in _events(tmp_path) if e["event"] == "terminated"]
         assert terminated["reason"] == "Iteration limit (2) reached"
         assert (terminated["limit"], terminated["phase"]) == ("iterations", "iteration_start")
+        summary = json.loads((_run_dir(tmp_path) / "summary.json").read_text(encoding="utf-8"))
+        assert summary["termination_reason"] == terminated["reason"]
+
+    async def test_a_cost_limit_stop_is_on_record(
+        self, tmp_path: Path, harness: SimpleNamespace
+    ) -> None:
+        harness.use(_Agents(_plan("t1"), review=lambda d, n: REJECT, meta=_PRICED))
+        harness.sandbox.reports = lambda n: {**FAILED, "stderr": f"boom {n}"}
+
+        state = await _pipeline(tmp_path, _config(max_cost_usd=3.0)).execute("build it")
+
+        assert state["status"] == "exhausted"
+        [terminated] = [e for e in _events(tmp_path) if e["event"] == "terminated"]
+        assert terminated["reason"].startswith("Cost limit ($3.00) reached")
+        assert terminated["limit"] == "cost"
         summary = json.loads((_run_dir(tmp_path) / "summary.json").read_text(encoding="utf-8"))
         assert summary["termination_reason"] == terminated["reason"]
 
@@ -849,7 +871,7 @@ class TestFinalCheckpoint:
         assert state["status"] == "exhausted"
         assert _checkpoint(tmp_path, state["iteration"])["status"] == "exhausted"
 
-    async def test_a_budget_stop(self, tmp_path: Path, harness: SimpleNamespace) -> None:
+    async def test_an_iteration_limit_stop(self, tmp_path: Path, harness: SimpleNamespace) -> None:
         harness.use(_Agents(_plan("t1"), review=lambda d, n: REJECT))
         harness.sandbox.reports = lambda n: {**FAILED, "stderr": f"boom {n}"}
 
@@ -858,6 +880,18 @@ class TestFinalCheckpoint:
         checkpoint = _checkpoint(tmp_path, state["iteration"])
         assert (checkpoint["status"], state["status"]) == ("exhausted", "exhausted")
         assert checkpoint["_termination_reason"] == "Iteration limit (2) reached"
+
+    async def test_a_cost_limit_stop(self, tmp_path: Path, harness: SimpleNamespace) -> None:
+        harness.use(_Agents(_plan("t1"), review=lambda d, n: REJECT, meta=_PRICED))
+        harness.sandbox.reports = lambda n: {**FAILED, "stderr": f"boom {n}"}
+
+        state = await _pipeline(tmp_path, _config(max_cost_usd=3.0)).execute("build it")
+
+        checkpoint = _checkpoint(tmp_path, state["iteration"])
+        assert (checkpoint["status"], state["status"]) == ("exhausted", "exhausted")
+        assert checkpoint["_termination_reason"].startswith("Cost limit ($3.00) reached")
+        [terminated] = [e for e in _events(tmp_path) if e["event"] == "terminated"]
+        assert terminated["limit"] == "cost"
 
     async def test_a_wall_time_stop(
         self, tmp_path: Path, harness: SimpleNamespace, monkeypatch: pytest.MonkeyPatch

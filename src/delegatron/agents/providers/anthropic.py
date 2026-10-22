@@ -35,6 +35,13 @@ from delegatron.agents.providers.base import (
     token_count,
 )
 
+# The host the Anthropic API (and so ANTHROPIC_AUTH_TOKEN) belongs to.
+_API_HOST = "api.anthropic.com"
+
+# Bedrock model IDs: ``[region.]anthropic.<model>[-v<n>[:<m>]]``.
+_BEDROCK_PREFIX = re.compile(r"^(?:[a-z]+\.)?anthropic\.")
+_BEDROCK_SUFFIX = re.compile(r"-v\d+(?::\d+)?$")
+
 # Anthropic accepts temperatures in [0, 1]; roles may set up to 2.0 (the OpenAI/Gemini range).
 _MAX_TEMPERATURE = 1.0
 
@@ -53,8 +60,13 @@ _FORCED_TOOL_MODELS = re.compile(
 
 
 def _model_name(model: str) -> str:
-    """*model* without a platform prefix (``anthropic.`` on Bedrock)."""
-    return model.rsplit(".", 1)[-1] if model.startswith("anthropic.") else model
+    """*model* as a bare Claude model name.
+
+    Drops Bedrock's ``anthropic.`` prefix, with or without a cross-region
+    inference prefix (``us.``, ``eu.``, ``global.``...), and its ``-v1:0``
+    version suffix.
+    """
+    return _BEDROCK_SUFFIX.sub("", _BEDROCK_PREFIX.sub("", model))
 
 
 def _accepts_temperature(model: str) -> bool:
@@ -106,9 +118,10 @@ class AnthropicProvider(BaseProvider):
         if base_url:
             kwargs["base_url"] = base_url
         self._client = anthropic.AsyncAnthropic(**kwargs)
-        if not env_auth:
-            # The SDK reads ANTHROPIC_AUTH_TOKEN itself and sends it to any
-            # base_url; a role barred from environment keys must not send it.
+        # The SDK reads ANTHROPIC_AUTH_TOKEN itself and sends it to any base_url
+        # (including one from ANTHROPIC_BASE_URL); like the default key, it goes
+        # only to the Anthropic API, and never for a role barred from env keys.
+        if not env_auth or self._client.base_url.host != _API_HOST:
             self._client.auth_token = None
         self._model = model
         self._base_url = base_url

@@ -581,8 +581,8 @@ class TestGenerateRepoMap:
                 f"class Cls{i}:\n    def method_{i}(self) -> None: pass\n"
             )
         result = generate_repo_map(tmp_path, max_tokens=64)
-        # 64 tokens * 4 chars = 256 chars budget; output should be bounded
-        assert len(result) < 500
+        # 64 tokens * 4 chars = 256 chars budget
+        assert 0 < len(result) <= 256
 
 
 # ---------------------------------------------------------------------------

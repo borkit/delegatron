@@ -1,8 +1,9 @@
 """Dashboard smoke tests — serve + create run flow.
 
-Validates the full server lifecycle without a running Ollama instance:
+Validates the full server lifecycle without a running Ollama instance, Docker
+or network: runs use the mock preset and a sandbox whose tests always pass.
 - Health check and provider key status
-- Create a run (mock preset) and poll for completion
+- Create a run (mock preset) and poll until it finishes with its known status
 - SSE event streaming
 - Plan-only and cost estimation endpoints
 - Run lifecycle (create → list → get → delete)
@@ -14,11 +15,49 @@ import json
 import time
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
+from delegatron.orchestrator import graph
 from delegatron.server.app import app, configure
+
+TERMINAL_STATUSES = ("approved", "partial", "exhausted", "stalled", "error", "cancelled")
+
+# The mock plan has two tasks and the mock implementer always creates
+# src/app/health.py: task t1 is approved, t2's identical patch cannot apply
+# over the file t1 created, so every mock run ends "partial".
+MOCK_RUN_STATUS = "partial"
+
+
+class _PassingSandbox:
+    """Every test run passes; no venv, no installs, no network, no Docker."""
+
+    async def apply_and_test(self, patch: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "passed": True,
+            "total": 1,
+            "failures": 0,
+            "stdout": "tests/test_health.py::test_ok PASSED\n1 passed in 0.01s",
+            "stderr": "",
+            "failed_tests": [],
+            "results": [{"name": "tests/test_health.py::test_ok", "passed": True}],
+        }
+
+    def cleanup(self) -> None:
+        pass
+
+
+def _wait_for_run(client: TestClient, run_id: str, timeout: float = 60.0) -> dict[str, Any]:
+    """Poll a run until it reaches a terminal status; fail the test on timeout."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        resp = client.get(f"/api/runs/{run_id}")
+        if resp.status_code == 200 and resp.json().get("status") in TERMINAL_STATUSES:
+            return dict(resp.json())
+        time.sleep(0.2)
+    pytest.fail(f"Run {run_id} did not finish within {timeout:.0f}s")
 
 
 @pytest.fixture
@@ -31,6 +70,7 @@ def dashboard_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterato
     """
     monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "false")
     monkeypatch.setenv("DELEGATRON_SANDBOX", "local")
+    monkeypatch.setattr(graph, "create_sandbox", lambda **_kwargs: _PassingSandbox())
     workspace = tmp_path / "workspace"
     workspace.mkdir()
 
@@ -88,19 +128,8 @@ def test_create_run_and_poll_summary(dashboard_client: TestClient) -> None:
     assert data["status"] == "started"
     run_id = data["run_id"]
 
-    # Poll for completion (local sandbox creates a venv, so allow more time)
-    summary = None
-    for _ in range(120):
-        time.sleep(0.5)
-        resp = dashboard_client.get(f"/api/runs/{run_id}")
-        if resp.status_code == 200:
-            candidate = resp.json()
-            if candidate.get("status") in ("approved", "exhausted", "stalled", "error"):
-                summary = candidate
-                break
-
-    assert summary is not None, f"Run {run_id} did not complete within timeout"
-    assert summary["status"] in ("approved", "exhausted", "stalled", "error")
+    summary = _wait_for_run(dashboard_client, run_id)
+    assert summary["status"] == MOCK_RUN_STATUS, summary
 
 
 # ---------------------------------------------------------------------------
@@ -118,17 +147,7 @@ def test_create_run_events_saved_to_disk(dashboard_client: TestClient, tmp_path:
     assert resp.status_code == 200
     run_id = resp.json()["run_id"]
 
-    # Wait for run to complete (local sandbox creates venv, allow more time)
-    for _ in range(120):
-        time.sleep(0.5)
-        resp = dashboard_client.get(f"/api/runs/{run_id}")
-        if resp.status_code == 200 and resp.json().get("status") in (
-            "approved",
-            "exhausted",
-            "stalled",
-            "error",
-        ):
-            break
+    assert _wait_for_run(dashboard_client, run_id)["status"] == MOCK_RUN_STATUS
 
     # Verify events.jsonl was written with pipeline events
     events_file = tmp_path / "runs" / run_id / "events.jsonl"
@@ -144,11 +163,8 @@ def test_create_run_events_saved_to_disk(dashboard_client: TestClient, tmp_path:
                     event_types.add(event["event"])
 
     assert "pipeline_start" in event_types, f"Missing pipeline_start in: {event_types}"
-    # Pipeline may end with pipeline_complete or pipeline_error (mock patches
-    # may not apply cleanly, causing exhaustion/error instead of clean completion)
-    assert event_types & {"pipeline_complete", "pipeline_error"}, (
-        f"Missing terminal event in: {event_types}"
-    )
+    assert "pipeline_complete" in event_types, f"Missing pipeline_complete in: {event_types}"
+    assert "pipeline_error" not in event_types
 
 
 @pytest.mark.integration
@@ -233,17 +249,8 @@ def test_create_and_delete_run(dashboard_client: TestClient, tmp_path: Path) -> 
     assert resp.status_code == 200
     run_id = resp.json()["run_id"]
 
-    # Wait for it to finish
-    for _ in range(20):
-        time.sleep(0.5)
-        resp = dashboard_client.get(f"/api/runs/{run_id}")
-        if resp.status_code == 200 and resp.json().get("status") in (
-            "approved",
-            "exhausted",
-            "stalled",
-            "error",
-        ):
-            break
+    # Delete only a finished run: its summary is on disk and nothing writes to it any more
+    assert _wait_for_run(dashboard_client, run_id)["status"] == MOCK_RUN_STATUS
 
     # Delete
     resp = dashboard_client.delete(f"/api/runs/{run_id}")
@@ -266,19 +273,9 @@ def test_list_runs_after_create(dashboard_client: TestClient) -> None:
     run_id = resp.json()["run_id"]
 
     # Wait for completion so summary.json is written
-    for _ in range(20):
-        time.sleep(0.5)
-        resp = dashboard_client.get(f"/api/runs/{run_id}")
-        if resp.status_code == 200 and resp.json().get("status") in (
-            "approved",
-            "exhausted",
-            "stalled",
-            "error",
-        ):
-            break
+    assert _wait_for_run(dashboard_client, run_id)["status"] == MOCK_RUN_STATUS
 
     resp = dashboard_client.get("/api/runs")
     assert resp.status_code == 200
-    runs = resp.json()
-    run_ids = [r["run_id"] for r in runs]
-    assert run_id in run_ids
+    runs = {r["run_id"]: r for r in resp.json()}
+    assert runs[run_id]["status"] == MOCK_RUN_STATUS

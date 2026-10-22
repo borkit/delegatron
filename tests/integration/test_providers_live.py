@@ -1,7 +1,12 @@
-"""Live provider integration tests — skipped when API keys are not set."""
+"""Live provider integration tests — these bill a real API.
+
+Opt-in only: they run when ``DELEGATRON_LIVE_TESTS=1`` is set and the
+provider's API key is present; plain ``pytest`` skips them all.
+"""
 
 from __future__ import annotations
 
+import json
 import os
 
 import pytest
@@ -9,7 +14,20 @@ import pytest
 from delegatron.agents.providers.registry import get_provider
 from delegatron.config import RoleConfig
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        os.environ.get("DELEGATRON_LIVE_TESTS") != "1",
+        reason="live API tests are opt-in: set DELEGATRON_LIVE_TESTS=1",
+    ),
+]
+
+_STATUS_SCHEMA = {
+    "title": "status_report",
+    "type": "object",
+    "properties": {"status": {"type": "string"}},
+    "required": ["status"],
+}
 
 
 def _has_key(env_var: str) -> bool:
@@ -89,10 +107,10 @@ async def test_anthropic_structured_output() -> None:
     response = await provider.generate(
         system_prompt="You are a JSON generator. Always respond with valid JSON only.",
         user_message='Return a JSON object with key "status" and value "ok".',
+        json_schema=_STATUS_SCHEMA,
         max_tokens=100,
     )
-    assert '"status"' in response.content
-    assert '"ok"' in response.content
+    assert json.loads(response.content) == {"status": "ok"}
 
 
 @skip_no_openai
@@ -104,7 +122,7 @@ async def test_openai_structured_output() -> None:
     response = await provider.generate(
         system_prompt="You are a JSON generator. Always respond with valid JSON only.",
         user_message='Return a JSON object with key "status" and value "ok".',
+        json_schema=_STATUS_SCHEMA,
         max_tokens=100,
     )
-    assert '"status"' in response.content
-    assert '"ok"' in response.content
+    assert json.loads(response.content) == {"status": "ok"}

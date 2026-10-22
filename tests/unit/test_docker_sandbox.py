@@ -7,13 +7,10 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from delegatron.sandbox.docker_runner import (
-    _CACHE_ROOT_LINUX,
-    DockerSandbox,
-    _build_install_postamble,
-    _build_test_preamble,
-    _cached_dirs_for_language,
-)
+from delegatron.sandbox.docker_runner import DockerSandbox, _cache_volume_mounts
+
+# Where the removed move-to-cache/symlink-back scheme kept dep dirs.
+_OLD_CACHE_ROOT = "/opt/delegatron-cache"
 
 
 def test_parse_test_output_passing():
@@ -43,66 +40,38 @@ def test_parse_test_output_empty():
 #
 # Regression coverage for a bug where iteration 2 of an npm project would fail
 # with "vitest: not found" because node_modules lives in the bind-mounted
-# workspace (not captured by ``docker commit``).  The fix relocates
-# node_modules into the image filesystem on cache create and symlinks it back
-# on cache hit.
+# workspace (not captured by ``docker commit``).  The fix mounts a named
+# volume over each workspace-local dep dir, shared by the install and test
+# containers.
 
 
 class TestCachedWorkspaceDirs:
+    @staticmethod
+    def _mounted(lang: str | None, is_windows: bool = False) -> list[str]:
+        args, _ = _cache_volume_mounts(lang, "k", "/workspace", is_windows)
+        return [arg.split(":", 1)[1] for arg in args if arg != "-v"]
+
     def test_javascript_has_node_modules(self):
-        assert "node_modules" in _cached_dirs_for_language("javascript")
+        assert self._mounted("javascript") == ["/workspace/node_modules"]
 
     def test_typescript_has_node_modules(self):
-        assert "node_modules" in _cached_dirs_for_language("typescript")
+        assert self._mounted("typescript") == ["/workspace/node_modules"]
 
     def test_php_has_vendor(self):
-        assert "vendor" in _cached_dirs_for_language("php")
+        assert self._mounted("php") == ["/workspace/vendor"]
 
     def test_python_has_no_cached_dirs(self):
         # Python deps live in site-packages (outside /workspace) — no rescue needed.
-        assert _cached_dirs_for_language("python") == ()
+        assert self._mounted("python") == []
 
     def test_none_language_has_no_cached_dirs(self):
-        assert _cached_dirs_for_language(None) == ()
+        assert self._mounted(None) == []
 
     def test_unknown_language_has_no_cached_dirs(self):
-        assert _cached_dirs_for_language("cobol") == ()
+        assert self._mounted("cobol") == []
 
-
-class TestInstallPostamble:
-    def test_javascript_moves_node_modules_into_cache(self):
-        snippet = _build_install_postamble("javascript", is_windows=False)
-        assert f"mkdir -p {_CACHE_ROOT_LINUX}" in snippet
-        assert "mv /workspace/node_modules" in snippet
-        assert f"{_CACHE_ROOT_LINUX}/node_modules" in snippet
-        # Guard so install doesn't fail when node_modules wasn't produced
-        assert "if [ -e /workspace/node_modules ]" in snippet
-
-    def test_python_produces_empty_postamble(self):
-        assert _build_install_postamble("python", is_windows=False) == ""
-
-    def test_windows_disables_postamble(self):
-        # Windows containers use a different shell and path layout; the
-        # bash-specific snippet would be invalid there.
-        assert _build_install_postamble("javascript", is_windows=True) == ""
-
-    def test_none_language_produces_empty_postamble(self):
-        assert _build_install_postamble(None, is_windows=False) == ""
-
-
-class TestTestPreamble:
-    def test_javascript_symlinks_node_modules_back(self):
-        snippet = _build_test_preamble("javascript", is_windows=False)
-        assert f"ln -s {_CACHE_ROOT_LINUX}/node_modules /workspace/node_modules" in snippet
-        # Only symlink if cache exists and workspace doesn't already have it
-        assert f"[ -d {_CACHE_ROOT_LINUX}/node_modules ]" in snippet
-        assert "[ ! -e /workspace/node_modules ]" in snippet
-
-    def test_python_produces_empty_preamble(self):
-        assert _build_test_preamble("python", is_windows=False) == ""
-
-    def test_windows_disables_preamble(self):
-        assert _build_test_preamble("javascript", is_windows=True) == ""
+    def test_windows_has_no_cached_dirs(self):
+        assert self._mounted("javascript", is_windows=True) == []
 
 
 # ---------------------------------------------------------------------------
@@ -197,7 +166,7 @@ def test_install_phase_mounts_node_modules_volume(tmp_path: Path) -> None:
     # Install script is just the install command — no move-to-cache postamble.
     assert install_script.strip() == "npm install"
     # Guard: the old postamble string must not leak in.
-    assert f"mv /workspace/node_modules {_CACHE_ROOT_LINUX}/node_modules" not in install_script
+    assert f"mv /workspace/node_modules {_OLD_CACHE_ROOT}/node_modules" not in install_script
     with patch.object(subprocess, "run", side_effect=_stub_run_factory(captured)):
         sandbox.cleanup()
 
@@ -252,7 +221,7 @@ def test_test_phase_reuses_node_modules_volume_on_cache_hit(tmp_path: Path) -> N
     assert node_modules_mounts, "test container must mount node_modules volume"
     # Script does NOT contain the old symlink-back preamble.
     test_script = test_cmd[-1]
-    assert f"ln -s {_CACHE_ROOT_LINUX}/node_modules /workspace/node_modules" not in test_script
+    assert f"ln -s {_OLD_CACHE_ROOT}/node_modules /workspace/node_modules" not in test_script
     assert "npm test" in test_script
     # Uses the cached image for the test phase.
     assert cached_tag in test_cmd

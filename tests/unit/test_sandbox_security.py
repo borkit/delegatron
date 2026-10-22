@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -129,16 +130,15 @@ class TestValidateE2BPath:
             E2BSandbox._validate_e2b_path("/absolute/path")
 
     def test_valid_relative_path(self) -> None:
-        # Should not raise
-        E2BSandbox._validate_e2b_path("src/main.py")
+        assert E2BSandbox._validate_e2b_path("src/main.py") == "src/main.py"
 
     def test_nested_dotdot_rejected(self) -> None:
         with pytest.raises(ValueError, match="Path traversal not allowed"):
             E2BSandbox._validate_e2b_path("src/../../etc/passwd")
 
     def test_deep_valid_path(self) -> None:
-        # Should not raise
-        E2BSandbox._validate_e2b_path("src/delegatron/agents/base.py")
+        path = "src/delegatron/agents/base.py"
+        assert E2BSandbox._validate_e2b_path(path) == path
 
 
 # ---------------------------------------------------------------------------
@@ -232,12 +232,20 @@ class TestDockerHostFallbackRefusal:
         marker.write_text("intact")
 
         start_time = time.monotonic()
-        result = sandbox._run_local(
-            sandbox_dir=tmp_path,
-            patch={"test_commands": ["rm marker.txt"]},
-            start_time=start_time,
-        )
+        with (
+            patch("subprocess.run") as run,
+            patch("subprocess.Popen") as popen,
+            patch("asyncio.create_subprocess_shell") as shell,
+        ):
+            result = sandbox._run_local(
+                sandbox_dir=tmp_path,
+                patch={"test_commands": ["rm marker.txt"]},
+                start_time=start_time,
+            )
 
+        run.assert_not_called()
+        popen.assert_not_called()
+        shell.assert_not_called()
         assert result["passed"] is False
         # Marker file should still exist (commands were not executed)
         assert marker.read_text() == "intact"

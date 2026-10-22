@@ -81,7 +81,9 @@ def test_reviewer_builds_user_message():
     assert "health endpoint" in msg
     assert "--- a/x.py" in msg
     assert "attempt 2 of the current task" in msg
-    assert "7" not in msg  # never the global iteration number
+    # never the global iteration number (the old "This is iteration 7 ..." wording)
+    assert "iteration 7" not in msg.lower()
+    assert "attempt 7" not in msg
 
 
 def test_architect_output_schema():
@@ -386,7 +388,8 @@ def test_reviewer_never_shows_the_global_iteration():
     )
 
     assert "## Iteration Context\n\nIssues from the previous review:" in msg
-    assert "5" not in msg
+    assert "iteration 5" not in msg.lower()
+    assert "attempt 5" not in msg
 
 
 def test_reviewer_renders_test_report_as_text():

@@ -52,10 +52,9 @@ class TestOllamaPresetLoading:
             assert "localhost:11434" in role.base_url, (
                 f"{preset_name}.{role_name}: expected Ollama base_url, got {role.base_url!r}"
             )
-            # prompt_version 1 (cloud prompt) or 3-5 (local prompts) are all valid
-            assert role.prompt_version in (1, 3, 4, 5), (
-                f"{preset_name}.{role_name}: expected prompt_version in (1,3,4,5), "
-                f"got {role.prompt_version}"
+            # every local preset pins the current local prompts
+            assert role.prompt_version == 5, (
+                f"{preset_name}.{role_name}: expected prompt_version 5, got {role.prompt_version}"
             )
 
     def test_local_uses_expected_models(self) -> None:
@@ -183,7 +182,8 @@ class TestOllamaErrorFlows:
         fake_exc.body = "CUDA error: out of memory allocating tensor"
         err = provider._friendly_status_error(fake_exc)
         assert isinstance(err, OllamaConnectionError)
-        assert "local" in str(err) or "smaller model" in str(err).lower()
+        assert "out of memory" in str(err)
+        assert "smaller model" in str(err).lower()
 
     def test_generic_500_suggests_repull(self) -> None:
         provider = self._make_provider()

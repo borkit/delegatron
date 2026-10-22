@@ -22,6 +22,11 @@ def test_route_exhausted():
     assert route_after_review(state) == "exhausted"
 
 
+def test_route_error_stops():
+    state = {"is_approved": False, "status": "error", "review_report": {"issues": [{"t": 1}]}}
+    assert route_after_review(state) == "exhausted"
+
+
 def test_route_to_architect_on_architecture_fix_target():
     state = {
         "is_approved": False,

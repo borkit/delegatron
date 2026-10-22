@@ -67,13 +67,13 @@ class TestRetryWithBackoff:
         class M(BaseModel):
             x: int
 
-        try:
+        with pytest.raises(ValidationError) as caught:
             M(x="not_int")  # type: ignore[arg-type]
-        except ValidationError as exc:
-            fn = AsyncMock(side_effect=exc)
-            with pytest.raises(ValidationError):
-                await retry_with_backoff(fn, max_retries=3)
-            fn.assert_awaited_once()
+
+        fn = AsyncMock(side_effect=caught.value)
+        with pytest.raises(ValidationError):
+            await retry_with_backoff(fn, max_retries=3)
+        fn.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_delay_capped_at_max_delay(self):
@@ -87,6 +87,7 @@ class TestRetryWithBackoff:
         with patch("delegatron.utils.retry.asyncio.sleep", side_effect=fake_sleep):
             result = await retry_with_backoff(fn, max_retries=3, base_delay=100.0, max_delay=5.0)
         assert result == "ok"
+        assert len(sleep_calls) == 2
         for delay in sleep_calls:
             # max_delay=5.0 + 10% jitter max = 5.5
             assert delay <= 5.5
@@ -170,7 +171,7 @@ class TestRetryWithBackoff:
         )
         with patch("delegatron.utils.retry.asyncio.sleep", new_callable=AsyncMock):
             result = await retry_with_backoff(fn, max_retries=3, base_delay=0.01)
-        assert result == "ok" if result == "ok" else result == "finally"
+        assert result == "finally"
         assert fn.await_count == 4
 
     @pytest.mark.asyncio

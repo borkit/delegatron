@@ -91,7 +91,12 @@ _PATTERNS: list[SecretPattern] = [
     # precise name.
     SecretPattern(
         name="private_key",
-        regex=re.compile(r"-----BEGIN\s+(?:RSA|EC|OPENSSH|DSA|PGP)\s+PRIVATE\s+KEY-----"),
+        # PKCS#1/SEC1/OpenSSH/DSA headers, PKCS#8 (no algorithm, optionally
+        # ENCRYPTED) and PGP's "PRIVATE KEY BLOCK".
+        regex=re.compile(
+            r"-----BEGIN\s+(?:(?:RSA|EC|OPENSSH|DSA|ENCRYPTED)\s+)?PRIVATE\s+KEY-----"
+            r"|-----BEGIN\s+PGP\s+PRIVATE\s+KEY\s+BLOCK-----"
+        ),
         severity="critical",
     ),
     SecretPattern(
@@ -121,7 +126,26 @@ _PATTERNS: list[SecretPattern] = [
     ),
     SecretPattern(
         name="openai_api_key",
-        regex=re.compile(r"\bsk-proj-[A-Za-z0-9_\-]{20,}"),
+        regex=re.compile(r"\bsk-(?:proj|svcacct|admin)-[A-Za-z0-9_\-]{20,}"),
+        severity="critical",
+    ),
+    SecretPattern(
+        # Legacy OpenAI keys: "sk-" and exactly 48 letters and digits, so short
+        # placeholders ("sk-...", "sk-your-key-here") are not flagged.
+        name="openai_api_key",
+        regex=re.compile(r"\bsk-[A-Za-z0-9]{48}(?![A-Za-z0-9_\-])"),
+        severity="critical",
+    ),
+    SecretPattern(
+        name="google_api_key",
+        regex=re.compile(r"\bAIza[0-9A-Za-z_\-]{35}(?![0-9A-Za-z_\-])"),
+        severity="critical",
+    ),
+    SecretPattern(
+        # Bot, user, app, refresh and legacy tokens: xoxb-<digits>-...; a
+        # placeholder such as "xoxb-your-token" has no numeric segment.
+        name="slack_token",
+        regex=re.compile(r"\bxox[baprs]-\d+-[0-9A-Za-z\-]{10,}"),
         severity="critical",
     ),
     SecretPattern(

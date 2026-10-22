@@ -13,6 +13,7 @@ import asyncio
 import copy
 import itertools
 import json
+import os
 import subprocess
 import threading
 from collections.abc import Callable
@@ -1250,6 +1251,7 @@ class TestEgressAndCost:
             subprocess.run(
                 ["git", "-c", "user.name=T", "-c", "user.email=t@t", *args],
                 cwd=tmp_path,
+                env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},  # no global hooks/signing
                 capture_output=True,
                 check=True,
             )
@@ -1413,7 +1415,7 @@ class TestEgressAndCost:
             reviewer=RoleConfig(
                 provider="openai-compatible",
                 model="claude-sonnet-4",
-                base_url="http://192.168.1.20:11434/v1",
+                base_url="http://10.0.0.5:11434/v1",
             ),
             pipeline=PipelineConfig(max_iterations=3, max_cost_usd=10.0, sandbox="local"),
         )
@@ -1521,6 +1523,7 @@ def _git(cwd: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "user.name=T", "-c", "user.email=t@t", *args],
         cwd=cwd,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},  # no global hooks/signing
         capture_output=True,
         text=True,
         check=True,
@@ -1688,8 +1691,13 @@ class TestArbitration:
     async def test_disabled_arbitration_creates_no_director(
         self, tmp_path: Path, harness: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        # _maybe_arbitrate swallows a director failure, so a raising stub would
+        # pass unnoticed: record the calls instead.
+        created: list[Pipeline] = []
+
         def no_director(self: Pipeline) -> object:
-            raise AssertionError("director created")
+            created.append(self)
+            raise RuntimeError("director created")
 
         monkeypatch.setattr(Pipeline, "_create_director", no_director)
         agents = harness.use(_Agents(_plan("t1"), review=lambda d, n: _varying_major(n)))
@@ -1698,6 +1706,9 @@ class TestArbitration:
 
         state = await _pipeline(tmp_path, config).execute("build it")
 
+        assert created == []
+        assert _events(tmp_path, "arbitration_triggered") == []
+        assert _events(tmp_path, "arbitration_failed") == []
         assert agents.count("director") == 0
         assert agents.count("implementer") == 3
         assert state["status"] == "stalled"
@@ -2735,7 +2746,8 @@ class TestSiblingEvents:
         assert not [e for e in errors if e["iteration"] == 1]
         [fallback] = _events(tmp_path, "parallel_task_fallback")
         assert fallback["task_id"] == "t2"
-        assert state["status"] in ("approved", "partial")
+        assert state["status"] == "approved"
+        assert state["_completed_tasks"] == ["t1", "t2"]
 
     def test_sibling_events_are_tagged(self) -> None:
         received: list[dict[str, Any]] = []
@@ -2792,7 +2804,8 @@ class TestTaskSelectionFixes:
 
         assert sorted(agents.task_ids()) == ["t1", "t2", "t3"]
         assert state["iteration"] - 1 <= len(tasks)
-        assert state["_completed_tasks"] == ["t3", "t1", "t2"]
+        # each task completes exactly once; the restored order is not part of the contract
+        assert sorted(state["_completed_tasks"]) == ["t1", "t2", "t3"]
         assert state["status"] == "approved"
 
     def test_the_selector_never_returns_a_finished_task(self) -> None:

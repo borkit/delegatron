@@ -100,7 +100,9 @@ _STDLIB_MODULES: frozenset[str] = frozenset(
 )
 
 # Regex patterns for import statements
-_IMPORT_RE = re.compile(r"^\s*import\s+([\w.]+)")
+# ``import a.b as c, d`` imports every listed module; the list is group 1.
+_IMPORTED_NAME = r"[\w.]+(?:\s+as\s+\w+)?"
+_IMPORT_RE = re.compile(rf"^\s*import\s+({_IMPORTED_NAME}(?:\s*,\s*{_IMPORTED_NAME})*)")
 _FROM_IMPORT_RE = re.compile(r"^\s*from\s+([\w.]+)\s+import\s+")
 
 
@@ -128,9 +130,16 @@ def _extract_imports(lines: list[str]) -> list[tuple[str, str]]:
     """
     results: list[tuple[str, str]] = []
     for line in lines:
-        match = _IMPORT_RE.match(line) or _FROM_IMPORT_RE.match(line)
-        if match and not match.group(1).startswith("."):
-            results.append((match.group(1).split(".")[0], line.strip()))
+        match = _IMPORT_RE.match(line)
+        if match:
+            # "import os, numpy as np" -> os, numpy
+            modules = [name.split()[0] for name in match.group(1).split(",")]
+        else:
+            match = _FROM_IMPORT_RE.match(line)
+            modules = [match.group(1)] if match else []
+        for module in modules:
+            if not module.startswith("."):
+                results.append((module.split(".")[0], line.strip()))
     return results
 
 

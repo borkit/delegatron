@@ -113,5 +113,7 @@ class RateLimiter:
         with self._lock:
             now = time.monotonic()
             state = self._get_user(user_id)
+            if run_id not in state.active_runs:
+                return  # already ended: don't count its cost twice
             state.active_runs.discard(run_id)
             state.cost_entries.append((now, cost))

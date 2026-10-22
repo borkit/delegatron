@@ -8,6 +8,7 @@ no consumer could read per-test outcomes.
 from __future__ import annotations
 
 import re
+import time
 
 from delegatron.utils.test_output import (
     build_results,
@@ -440,7 +441,9 @@ class TestParsePytestOutcomes:
 
     def test_pathological_line_is_fast(self) -> None:
         # Many "::" segments without a status must not backtrack exponentially.
+        started = time.perf_counter()
         assert parse_pytest_outcomes("x.py" + "::a" * 5000 + " !") == {}
+        assert time.perf_counter() - started < 1.0
 
 
 class TestBuildResults:

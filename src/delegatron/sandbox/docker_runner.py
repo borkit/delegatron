@@ -339,54 +339,6 @@ def _cache_volume_mounts(
     return args, names
 
 
-_CACHE_ROOT_LINUX = "/opt/delegatron-cache"
-
-
-def _cached_dirs_for_language(lang: str | None) -> tuple[str, ...]:
-    """Return workspace-relative dep dirs to persist for the given language."""
-    if lang is None:
-        return ()
-    return _CACHED_WORKSPACE_DIRS.get(lang, ())
-
-
-def _build_install_postamble(lang: str | None, is_windows: bool) -> str:
-    """Shell snippet appended after install, before ``docker commit``.
-
-    Moves workspace-local dep dirs (e.g. ``node_modules``) into the image
-    filesystem so the commit captures them.  Returns an empty string when
-    no persistence is needed.
-    """
-    dirs = _cached_dirs_for_language(lang)
-    if not dirs or is_windows:
-        return ""
-    parts = [f"mkdir -p {_CACHE_ROOT_LINUX}"]
-    for d in dirs:
-        parts.append(
-            f"if [ -e /workspace/{d} ]; then "
-            f"rm -rf {_CACHE_ROOT_LINUX}/{d} && "
-            f"mv /workspace/{d} {_CACHE_ROOT_LINUX}/{d}; fi"
-        )
-    return " && ".join(parts)
-
-
-def _build_test_preamble(lang: str | None, is_windows: bool) -> str:
-    """Shell snippet prepended to test command when using a cached image.
-
-    Symlinks persisted dep dirs from the image filesystem back into the
-    (freshly-copied) workspace mount so test runners can resolve them.
-    """
-    dirs = _cached_dirs_for_language(lang)
-    if not dirs or is_windows:
-        return ""
-    parts = []
-    for d in dirs:
-        parts.append(
-            f"if [ -d {_CACHE_ROOT_LINUX}/{d} ] && [ ! -e /workspace/{d} ]; then "
-            f"ln -s {_CACHE_ROOT_LINUX}/{d} /workspace/{d}; fi"
-        )
-    return " && ".join(parts)
-
-
 def _rule_commands(rule: LangRule) -> tuple[str, str, str]:
     return rule.language, rule.test_command, rule.install_command
 
@@ -1368,13 +1320,8 @@ class DockerSandbox(BaseSandbox):
         dep_volume_args, dep_volume_names = _cache_volume_mounts(
             lang, f"{self._instance_id}-{cache_key}", workspace_mount, is_windows
         )
-        if dep_volume_args:
-            run_args.extend(dep_volume_args)
-            self._cached_volumes.update(dep_volume_names)
-            install_postamble = test_preamble = ""
-        else:
-            install_postamble = _build_install_postamble(lang, is_windows)
-            test_preamble = _build_test_preamble(lang, is_windows)
+        run_args.extend(dep_volume_args)
+        self._cached_volumes.update(dep_volume_names)
 
         # With a cached image the deps are installed system-wide (no venv).
         test_image, test_prefix = (cache_tag, "") if use_cached else (image, env_prefix)
@@ -1388,7 +1335,7 @@ class DockerSandbox(BaseSandbox):
                     image,
                     shell_cmd,
                     cmd_join,
-                    [*install_cmds, *([install_postamble] if install_postamble else [])],
+                    install_cmds,
                     cache_tag=cache_tag,
                     env_prefix=env_prefix,
                     toolchain_retry=not is_windows and lang == "python",
@@ -1399,11 +1346,8 @@ class DockerSandbox(BaseSandbox):
             elif use_cached:
                 logger.info("Docker: skipping install phase — using cached image %s", cache_tag)
 
-            # Phase 2: run tests WITHOUT network.  On cache hit, restore
-            # persisted dep dirs from the image filesystem into /workspace.
+            # Phase 2: run tests WITHOUT network.
             setup_parts = [test_prefix] if test_prefix else []
-            if test_image == cache_tag and test_preamble:
-                setup_parts.append(test_preamble)
             offline_env = ["-e", "CARGO_NET_OFFLINE=true"] if lang == "rust" else []
             test_container = [
                 *run_args,

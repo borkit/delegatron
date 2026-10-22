@@ -1,6 +1,7 @@
 """Tests for workspace management."""
 
 import ast
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -13,50 +14,51 @@ from delegatron.workspace import ApplyResult, Workspace, WorkspaceInfo
 TEXT_IO_METHODS = {"read_text", "write_text", "open"}
 
 
+_IDENTITY = {
+    "GIT_AUTHOR_NAME": "Test",
+    "GIT_AUTHOR_EMAIL": "test@test.com",
+    "GIT_COMMITTER_NAME": "Test",
+    "GIT_COMMITTER_EMAIL": "test@test.com",
+}
+
+
+def _git_env() -> dict[str, str]:
+    """The caller's environment with a test identity and no global git config."""
+    return {**os.environ, **_IDENTITY, "GIT_CONFIG_GLOBAL": os.devnull}
+
+
 def _git(cwd: Path, *args: str) -> str:
-    """Run git with a throwaway identity; returns stdout."""
+    """Run git with a throwaway identity, no global config and no signing; returns stdout."""
     return subprocess.run(
-        ["git", "-c", "user.name=Test", "-c", "user.email=test@test.com", *args],
+        [
+            "git",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@test.com",
+            "-c",
+            "commit.gpgsign=false",
+            *args,
+        ],
         cwd=cwd,
         capture_output=True,
         text=True,
         check=True,
+        env=_git_env(),
     ).stdout
 
 
 @pytest.fixture
 def git_repo(tmp_path: Path) -> Path:
-    """Create a temporary git repo for testing."""
-    env = {
-        "GIT_AUTHOR_NAME": "Test",
-        "GIT_AUTHOR_EMAIL": "test@test.com",
-        "GIT_COMMITTER_NAME": "Test",
-        "GIT_COMMITTER_EMAIL": "test@test.com",
-        "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
-    }
-    subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True, env=env)
-    subprocess.run(
-        ["git", "config", "user.email", "test@test.com"],
-        cwd=tmp_path,
-        capture_output=True,
-        check=True,
-        env=env,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"],
-        cwd=tmp_path,
-        capture_output=True,
-        check=True,
-        env=env,
-    )
-    subprocess.run(
-        ["git", "config", "commit.gpgsign", "false"],
-        cwd=tmp_path,
-        capture_output=True,
-        check=True,
-        env=env,
-    )
+    """Create a temporary git repo on ``main`` with one commit."""
+    env = _git_env()
+    for args in (
+        ["init", "-b", "main"],
+        ["config", "user.email", "test@test.com"],
+        ["config", "user.name", "Test"],
+        ["config", "commit.gpgsign", "false"],
+    ):
+        subprocess.run(["git", *args], cwd=tmp_path, capture_output=True, check=True, env=env)
 
     # Create initial commit
     (tmp_path / "README.md").write_text("# Test\n")
@@ -290,8 +292,8 @@ def test_detect_default_branch_fallback_to_current(git_repo: Path):
     """When no remote exists, _detect_default_branch should fall back to current branch."""
     ws = Workspace(repo_path=git_repo, run_id="detect-branch")
     # No remote configured, so it should detect current branch
-    detected = ws._detect_default_branch()
-    assert detected is not None  # should return the current branch name
+    current = _git(git_repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+    assert ws._detect_default_branch() == current == "main"
 
 
 def test_detect_default_branch_keeps_slashes_in_remote_head(bare_repo: Path):

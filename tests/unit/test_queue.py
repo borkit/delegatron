@@ -268,15 +268,22 @@ class TestRunQueue:
         await queue.submit(run)
         queue.cancel("skip-me")
 
+        live = _make_run(run_id="live-one", request="add logout endpoint")
         with patch(
             "delegatron.orchestrator.graph.Pipeline",
             return_value=mock_pipeline,
         ):
             await queue.start_workers()
-            await asyncio.sleep(0.3)
+            # A run submitted after the cancelled one proves the worker ran.
+            await queue.submit(live)
+            for _ in range(100):
+                await asyncio.sleep(0.05)
+                if live.status in (RunStatus.COMPLETED, RunStatus.FAILED):
+                    break
             await queue.stop()
 
-        mock_pipeline.execute.assert_not_called()
+        assert live.status == RunStatus.COMPLETED
+        mock_pipeline.execute.assert_awaited_once_with("add logout endpoint")
         assert run.status == RunStatus.CANCELLED
 
 

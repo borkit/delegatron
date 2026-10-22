@@ -4,7 +4,31 @@ from pathlib import Path
 
 import pytest
 
-from delegatron.utils.cost import CostTracker, logged_cost_usd
+from delegatron.config import PRESETS, Config, RoleConfig, is_local_model
+from delegatron.utils.cost import PRICING, CostTracker, logged_cost_usd
+
+
+def _cloud_models() -> set[str]:
+    """Every cloud model the presets and the built-in role defaults name."""
+    roles = [
+        RoleConfig(
+            provider=str(entry["provider"]),
+            model=str(entry["model"]),
+            base_url=str(entry.get("base_url", "")),
+        )
+        for preset in PRESETS.values()
+        for entry in preset.values()
+        if isinstance(entry, dict) and "model" in entry
+    ]
+    defaults = Config()
+    roles += [defaults.architect, defaults.implementer, defaults.reviewer]
+    return {role.model for role in roles if not is_local_model(role)}
+
+
+@pytest.mark.parametrize("model", sorted(_cloud_models()))
+def test_every_preset_cloud_model_is_priced(model):
+    """An unpriced model is billed at the fallback guess, which can end a run early."""
+    assert model in PRICING
 
 
 def test_cost_tracker_records():

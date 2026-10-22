@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class PipelineEvent(BaseModel):
 
     event_id: str
     event_type: str
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     run_id: str
     task_id: str = ""
     attempt: int = 1

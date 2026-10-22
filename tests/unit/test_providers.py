@@ -109,15 +109,11 @@ def test_installed_packages_satisfy_pyproject():
 
 def test_registry_anthropic():
     """Anthropic routes to AnthropicProvider."""
-    config = RoleConfig(provider="anthropic", model="claude-sonnet-4-20250514", api_key="test")
-    try:
-        provider = get_provider(config)
-        from delegatron.agents.providers.anthropic import AnthropicProvider
+    pytest.importorskip("anthropic")
+    from delegatron.agents.providers.anthropic import AnthropicProvider
 
-        assert isinstance(provider, AnthropicProvider)
-    except RuntimeError as e:
-        # Anthropic SDK not installed — that's expected in some test envs
-        assert "Anthropic SDK not installed" in str(e)
+    config = RoleConfig(provider="anthropic", model="claude-sonnet-4-20250514", api_key="test")
+    assert isinstance(get_provider(config), AnthropicProvider)
 
 
 @patch("delegatron.agents.providers.openai_provider._HAS_OPENAI", True)
@@ -148,15 +144,11 @@ def test_registry_openai_compatible(mock_openai):
 
 def test_registry_google():
     """Google routes to GoogleProvider."""
-    config = RoleConfig(provider="google", model="gemini-2.5-pro", api_key="test")
-    try:
-        provider = get_provider(config)
-        from delegatron.agents.providers.google import GoogleProvider
+    pytest.importorskip("google.genai")
+    from delegatron.agents.providers.google import GoogleProvider
 
-        assert isinstance(provider, GoogleProvider)
-    except (RuntimeError, NameError):
-        # Google SDK not installed or _HAS_GOOGLE not defined — expected
-        pass
+    config = RoleConfig(provider="google", model="gemini-2.5-pro", api_key="test")
+    assert isinstance(get_provider(config), GoogleProvider)
 
 
 @patch("delegatron.agents.providers.openai_provider._HAS_OPENAI", True)
@@ -217,7 +209,7 @@ class TestOllamaErrorMessages:
         fake_exc.body = "out of memory allocating tensor"
         err = provider._friendly_status_error(fake_exc)
         assert "out of memory" in str(err).lower()
-        assert "smaller model" in str(err).lower() or "local" in str(err)
+        assert "smaller model" in str(err).lower()
 
     def test_non_ollama_connection_error_is_generic(self):
         """Non-Ollama providers get generic error messages."""
@@ -771,7 +763,23 @@ class TestRegistryApiKeys:
     def _env_keys(self, monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "sk-real-openai")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-real")
+        monkeypatch.setenv("GEMINI_API_KEY", "gm-real")
+        monkeypatch.setenv("GOOGLE_API_KEY", "gm-real")
         monkeypatch.setenv("FAKE_SECRET", "s3cret")
+        for name in ("ANTHROPIC_BASE_URL", "OPENAI_BASE_URL", "ANTHROPIC_AUTH_TOKEN"):
+            monkeypatch.delenv(name, raising=False)
+
+    _REAL_KEYS = ("sk-real-openai", "sk-ant-real", "gm-real")
+
+    @staticmethod
+    def _sent_key(config: RoleConfig) -> str:
+        """The API key the provider's SDK client will send."""
+        if config.provider == "anthropic":
+            pytest.importorskip("anthropic")
+        if config.provider == "google":
+            pytest.importorskip("google.genai")
+            return get_provider(config)._client._api_client.api_key
+        return get_provider(config)._client.api_key
 
     @pytest.mark.parametrize(
         ("provider", "base_url"),
@@ -780,20 +788,62 @@ class TestRegistryApiKeys:
             ("openai-compatible", "http://attacker.example:9000/v1"),
             ("openai", "http://attacker.example:9000/v1"),
             ("anthropic", "http://attacker.example:9000"),
+            ("google", "http://attacker.example:9000"),
         ],
     )
     def test_foreign_base_url_gets_no_default_key(self, provider, base_url):
+        key = self._sent_key(RoleConfig(provider=provider, model="m", base_url=base_url))
+        assert key in ("", NO_API_KEY)
+        assert key not in self._REAL_KEYS
+
+    @pytest.mark.parametrize(
+        ("provider", "env_var", "base_url"),
+        [
+            ("openai", "OPENAI_BASE_URL", "http://attacker.example:9000/v1"),
+            ("anthropic", "ANTHROPIC_BASE_URL", "http://attacker.example:9000"),
+        ],
+    )
+    def test_sdk_base_url_env_gets_no_default_key(self, monkeypatch, provider, env_var, base_url):
+        """With no role base_url the SDK reads its own base-URL variable; the key follows it."""
+        monkeypatch.setenv(env_var, base_url)
+        config = RoleConfig(provider=provider, model="m")
         if provider == "anthropic":
             pytest.importorskip("anthropic")
-        client = get_provider(RoleConfig(provider=provider, model="m", base_url=base_url))._client
-        assert client.api_key in ("", NO_API_KEY)
-        assert client.api_key not in ("sk-real-openai", "sk-ant-real")
+        client = get_provider(config)._client
 
-    def test_home_host_gets_default_key(self):
-        config = RoleConfig(
-            provider="openai", model="gpt-4.1", base_url="https://api.openai.com/v1"
-        )
-        assert get_provider(config)._client.api_key == "sk-real-openai"
+        assert client.base_url.host == "attacker.example"
+        assert client.api_key in ("", NO_API_KEY)
+        assert client.api_key not in self._REAL_KEYS
+
+    @pytest.mark.parametrize(
+        ("provider", "base_url", "expected"),
+        [
+            ("openai", "https://api.openai.com/v1", "sk-real-openai"),
+            ("openai", "", "sk-real-openai"),
+            ("anthropic", "https://api.anthropic.com", "sk-ant-real"),
+            ("anthropic", "", "sk-ant-real"),
+            ("google", "https://generativelanguage.googleapis.com", "gm-real"),
+            ("google", "", "gm-real"),
+        ],
+    )
+    def test_home_host_gets_default_key(self, provider, base_url, expected):
+        config = RoleConfig(provider=provider, model="m", base_url=base_url)
+        assert self._sent_key(config) == expected
+
+    def test_sdk_base_url_env_naming_the_home_host_gets_default_key(self, monkeypatch):
+        monkeypatch.setenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        assert self._sent_key(RoleConfig(provider="openai", model="m")) == "sk-real-openai"
+
+    def test_google_role_without_a_key_never_falls_back_to_the_env(self):
+        """genai.Client reads GOOGLE_API_KEY / GEMINI_API_KEY for an empty key."""
+        barred = RoleConfig(provider="google", model="m", allow_env_key=False)
+        assert self._sent_key(barred) == NO_API_KEY
+
+    def test_google_honours_base_url(self):
+        pytest.importorskip("google.genai")
+        config = RoleConfig(provider="google", model="m", base_url="http://gemini-proxy:8080")
+        http_options = get_provider(config)._client._api_client._http_options
+        assert http_options.base_url == "http://gemini-proxy:8080"
 
     def test_explicit_api_key_env_is_honoured(self):
         config = RoleConfig(
@@ -814,11 +864,13 @@ class TestRegistryApiKeys:
         )
         assert get_provider(config)._client.api_key == NO_API_KEY
 
-    def test_anthropic_auth_token_follows_the_env_key_policy(self, monkeypatch):
-        """The SDK reads ANTHROPIC_AUTH_TOKEN itself; a role barred from env keys drops it."""
+    @pytest.mark.parametrize("base_url", ["", "https://api.anthropic.com"])
+    def test_anthropic_auth_token_follows_the_env_key_policy(self, monkeypatch, base_url):
+        """The SDK reads ANTHROPIC_AUTH_TOKEN itself; it is kept only for the Anthropic API,
+        and dropped for a role barred from env keys."""
         pytest.importorskip("anthropic")
         monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "bearer-secret")
-        role = RoleConfig(provider="anthropic", model="m", base_url="http://attacker.example")
+        role = RoleConfig(provider="anthropic", model="m", base_url=base_url)
 
         barred = get_provider(RoleConfig(**{**vars(role), "allow_env_key": False}))._client
         allowed = get_provider(role)._client
@@ -826,6 +878,26 @@ class TestRegistryApiKeys:
         assert barred.auth_token is None
         assert "Authorization" not in barred.auth_headers
         assert allowed.auth_token == "bearer-secret"
+
+    @pytest.mark.parametrize(
+        ("base_url", "env_base_url"),
+        [("http://attacker.example", ""), ("", "http://attacker.example")],
+        ids=["role_base_url", "ANTHROPIC_BASE_URL"],
+    )
+    def test_anthropic_auth_token_is_not_sent_to_a_foreign_host(
+        self, monkeypatch, base_url, env_base_url
+    ):
+        pytest.importorskip("anthropic")
+        monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "bearer-secret")
+        if env_base_url:
+            monkeypatch.setenv("ANTHROPIC_BASE_URL", env_base_url)
+
+        config = RoleConfig(provider="anthropic", model="m", base_url=base_url)
+        client = get_provider(config)._client
+
+        assert client.base_url.host == "attacker.example"
+        assert client.auth_token is None
+        assert "Authorization" not in client.auth_headers
 
 
 # --- OpenAI adapter: structured output request ---
@@ -1430,6 +1502,14 @@ class TestAnthropicAdapter:
             ("claude-opus-5-5", False, False),
             ("claude-fable-5-1", False, False),
             ("claude-next-model", False, False),
+            ("claude-mythos-5-1", False, False),
+            ("claude-haiku-5-5", False, True),
+            ("claude-opus-4-6", True, True),
+            ("claude-opus-4-7", False, True),  # the temperature boundary
+            ("anthropic.claude-opus-5-5-v1:0", False, False),
+            ("anthropic.claude-sonnet-4-6-v1:0", True, True),
+            ("us.anthropic.claude-sonnet-4-6-v1:0", True, True),
+            ("eu.anthropic.claude-opus-4-7-v1:0", False, True),
         ],
     )
     def test_request_shape_follows_the_model(self, model, temperature, forced):
@@ -1439,6 +1519,32 @@ class TestAnthropicAdapter:
         )
         assert ("temperature" in kwargs) is temperature
         assert (kwargs["tool_choice"]["type"] == "tool") is forced
+
+    async def test_generate_for_a_model_without_forced_tools(self):
+        """Sonnet 5.5: the request body carries no temperature and an ``auto`` tool_choice,
+        and a text-only reply (no tool_use block) comes back as the content."""
+        provider = _anthropic_provider(model="claude-sonnet-5-5")
+        reply = {
+            "id": "msg_1",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-sonnet-5-5",
+            "content": [{"type": "text", "text": '{"goal": "x"}'}],
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 20},
+        }
+        requests = _with_transport(provider, lambda request: httpx.Response(200, json=reply))
+        schema = {"title": "Work Plan", "type": "object", "properties": {}}
+
+        response = await provider.generate("sys", "msg", json_schema=schema, temperature=0.7)
+
+        body = json.loads(requests[0].content)
+        assert "temperature" not in body
+        assert body["tool_choice"] == {"type": "auto"}
+        assert body["tools"][0]["name"] == "work_plan"
+        assert "Always call this tool" in body["tools"][0]["description"]
+        assert response.content == '{"goal": "x"}'
 
     @pytest.mark.parametrize(
         ("usage", "expected"),

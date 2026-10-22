@@ -118,7 +118,7 @@ class TestSelectPresetLanguages:
 
     def test_hard_language_increases_score(self):
         preset, reason = select_preset("add a feature", {"languages": ["Rust"]})
-        assert preset in ("default", "claude-heavy")
+        assert preset == "default"  # score 1: one hard language alone is not heavy
         assert "rust" in reason.lower()
 
     def test_multiple_hard_languages(self):
@@ -128,7 +128,7 @@ class TestSelectPresetLanguages:
 
     def test_easy_languages_decrease_score(self):
         preset, reason = select_preset("add a feature", {"languages": ["python"]})
-        # easy language alone doesn't push to budget (score=-1 needs score<=-1)
+        # an all-easy stack scores -1, which maps to budget (score <= -1)
         assert preset == "budget"
         assert "python" in reason
 
@@ -136,6 +136,7 @@ class TestSelectPresetLanguages:
         """If languages include non-easy ones, no easy bonus is applied."""
         _preset, reason = select_preset("add a feature", {"languages": ["python", "rust"]})
         assert "rust" in reason.lower()
+        assert "well-supported by all models" not in reason
 
     def test_empty_languages_no_language_reason(self):
         preset, _reason = select_preset("add a feature", {"languages": []})
@@ -195,7 +196,7 @@ class TestSelectPresetFileReferences:
     def test_few_file_mentions_no_effect(self):
         request = "update foo.py and bar.js"
         _preset, reason = select_preset(request, {})
-        assert "files" not in reason or "references" not in reason
+        assert "references" not in reason
 
 
 class TestSelectPresetCombinations:

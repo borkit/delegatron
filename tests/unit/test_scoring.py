@@ -23,7 +23,7 @@ def test_score_with_minor_issues():
     review = {"issues": [{"severity": "minor"}, {"severity": "nit"}]}
     score = compute_score(review)
     # minor=1.0, nit=0.2, total=1.2/20 = 0.06 deduction -> 0.94
-    assert 0.9 < score < 1.0
+    assert score == 0.94
 
 
 def test_score_with_blocker():

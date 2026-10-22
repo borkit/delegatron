@@ -136,8 +136,32 @@ class TestDirectorMessage:
         )
         assert msg == "## Original Request\n\nr"
 
-    def test_trims_changed_files_first(self) -> None:
-        assert DirectorAgent._context_trim_keys == ("changed_files",)
+    async def test_trims_changed_files_first(self) -> None:
+        """An oversized input loses changed files; conflicts and failing tests survive."""
+        provider = RecordingProvider('{"resolutions": []}')
+        agent = DirectorAgent(provider=provider, system_prompt="director", context_window=16_000)
+        failing = "E       AssertionError: 14 != 12 (deal_count)\n" * 40
+        changed = {f"src/module_{i}.py": f"# module {i}\n" + "x = 1\n" * 4_000 for i in range(3)}
+
+        result = await agent.invoke(
+            {
+                "request": "Simulate a card deal",
+                "conflicts": [{"title": "Wrong print count", "severity": "major"}],
+                "test_passed": False,
+                "failing_tests": failing,
+                "changed_files": changed,
+            }
+        )
+
+        trim = result["_meta"]["context_trimmed"]
+        assert trim["keys"] == ["changed_files"]
+        assert trim["dropped"]["changed_files"]  # whole files dropped, last ones first
+        assert "src/module_2.py" in trim["dropped"]["changed_files"]
+        assert trim["still_over"] is False
+        message = provider.calls[0]["user_message"]
+        assert "Wrong print count" in message
+        assert failing.strip() in message
+        assert "### src/module_2.py" not in message
 
 
 class TestDirectorInvoke:

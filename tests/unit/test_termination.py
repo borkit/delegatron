@@ -31,6 +31,11 @@ def test_terminate_when_budget_exceeded():
     assert should_terminate(state, max_iterations=5, max_cost_usd=5.0) is True
 
 
+def test_terminate_at_exactly_the_budget():
+    state = {"is_approved": False, "iteration": 1, "total_cost_usd": 5.0}
+    assert should_terminate(state, max_iterations=5, max_cost_usd=5.0) is True
+
+
 def test_no_terminate_when_in_progress():
     state = {"is_approved": False, "iteration": 2, "total_cost_usd": 1.0}
     assert should_terminate(state, max_iterations=5, max_cost_usd=5.0) is False

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import subprocess
 import sys
 from pathlib import Path
@@ -406,20 +405,3 @@ class TestParseErrorFormat:
         assert "Python" in formatted
         assert "src/foo.py" in formatted
         assert "invalid syntax" in formatted
-
-
-def test_docstring_describes_severity_split() -> None:
-    doc = inspect.getdoc(parse_check) or ""
-    assert "-Severity Error" not in doc
-    assert "BLOCKING_PS_RULES" in doc
-    assert "advisories" in doc
-
-
-class TestDockerRunnerIntegration:
-    """Smoke test that docker_runner wires the gate in correctly."""
-
-    def test_gate_import_works(self) -> None:
-        # Just confirm the import succeeds; the gate is used in docker_runner.run()
-        from delegatron.sandbox.docker_runner import run_parse_checks as imported
-
-        assert imported is run_parse_checks

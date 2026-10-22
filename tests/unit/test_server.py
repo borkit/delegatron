@@ -1,10 +1,12 @@
 """Tests for the API server."""
 
 import asyncio
+import contextlib
 import hashlib
 import hmac
 import json
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any, ClassVar, cast
 from unittest.mock import MagicMock
@@ -30,12 +32,44 @@ def _sign_payload(payload: dict) -> str:
     return f"sha256={sig}"
 
 
+@pytest.fixture(autouse=True)
+def _isolated_server_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every test gets its own data dir, feature flags and webhook secret.
+
+    The server's data dir defaults to the relative ``data/``: without this a
+    project or SWE-bench test would write into the repository, and a flag one
+    test turns on would leak into the next.
+    """
+    monkeypatch.setattr(app_module, "_data_dir", tmp_path / "data")
+    monkeypatch.setattr(
+        app_module, "_feature_flags", {"parallel_tasks": False, "project_mode": False}
+    )
+    monkeypatch.setattr(app_module, "_webhook_secret", None)
+    monkeypatch.setattr(app_module, "_active_projects", {})
+    monkeypatch.setattr(app_module, "_active_swebench", {})
+
+
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     # Ensure auth is off by default for existing tests
     monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "false")
     configure(workspace=tmp_path, artifacts=tmp_path / "runs")
     return TestClient(app)
+
+
+@pytest.fixture
+def machine_probes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fixed Ollama and Docker answers, so health checks don't depend on the machine."""
+
+    def _ollama() -> dict[str, Any]:
+        return {"running": True, "models": ["m:7b"], "url": "http://localhost:11434"}
+
+    def _docker(cmd: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[str]:
+        assert cmd[0] == "docker"
+        return subprocess.CompletedProcess(cmd, 0, stdout="27.0.1\n", stderr="")
+
+    monkeypatch.setattr(app_module, "_check_ollama_sync", _ollama)
+    monkeypatch.setattr(app_module.subprocess, "run", _docker)
 
 
 def test_health(client: TestClient):
@@ -46,15 +80,19 @@ def test_health(client: TestClient):
     assert "version" in data
 
 
-def test_health_full(client: TestClient):
+def test_health_full(client: TestClient, machine_probes: None):
     """Full health check returns all expected sections."""
     resp = client.get("/api/health/full")
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
     assert "version" in data
-    assert "ollama" in data
-    assert "docker" in data
+    assert data["ollama"] == {
+        "running": True,
+        "models": ["m:7b"],
+        "url": "http://localhost:11434",
+    }
+    assert data["docker"] == {"available": True, "version": "27.0.1"}
     # Disk metrics should be populated (artifacts dir exists via fixture)
     disk = data["disk"]
     assert disk["total_gb"] > 0
@@ -62,7 +100,24 @@ def test_health_full(client: TestClient):
     assert "providers" in data
 
 
-def test_health_full_missing_artifacts_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_health_full_without_docker(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """No docker CLI and no Ollama: both are reported unavailable."""
+
+    def _no_docker(cmd: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[str]:
+        raise FileNotFoundError(cmd[0])
+
+    monkeypatch.setattr(app_module, "_check_ollama_sync", lambda: {"running": False})
+    monkeypatch.setattr(app_module.subprocess, "run", _no_docker)
+
+    data = client.get("/api/health/full").json()
+
+    assert data["docker"] == {"available": False, "version": ""}
+    assert data["ollama"] == {"running": False}
+
+
+def test_health_full_missing_artifacts_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, machine_probes: None
+):
     """Disk usage should fall back to cwd when artifacts dir doesn't exist."""
     monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "false")
     # Point artifacts at a path that doesn't exist
@@ -77,7 +132,9 @@ def test_health_full_missing_artifacts_dir(tmp_path: Path, monkeypatch: pytest.M
     assert isinstance(disk["used_percent"], float)
 
 
-def test_health_full_disk_oserror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_health_full_disk_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, machine_probes: None
+):
     """Disk usage should gracefully return 0.0 on OSError."""
     import shutil
 
@@ -132,7 +189,7 @@ def test_get_run_with_summary(client: TestClient, tmp_path: Path):
     assert resp.json()["status"] == "approved"
 
 
-def test_create_run(client: TestClient):
+def test_create_run(client: TestClient, started_runs: list[dict[str, Any]]):
     resp = client.post(
         "/api/runs",
         json={"request": "Add health endpoint", "preset": "mock"},
@@ -140,7 +197,11 @@ def test_create_run(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "started"
-    assert "run_id" in data
+    [call] = started_runs
+    assert call["run_id"] == data["run_id"]
+    assert call["req"].request == "Add health endpoint"
+    assert call["req"].preset == "mock"
+    assert call["initial_state"] is None
 
 
 def test_create_run_invalid_preset(client: TestClient):
@@ -172,6 +233,38 @@ def test_create_run_config_path_escape(client: TestClient):
     assert resp.status_code == 422
 
 
+def test_create_run_config_path_to_a_real_toml_outside_the_workspace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, started_runs: list[dict[str, Any]]
+):
+    """A TOML that exists but lies outside the workspace is refused as escaping it.
+
+    ``..`` is refused by the request model, so the file is reached through a
+    symlink in the workspace, or (where symlinks need privileges) through a
+    drive-absolute Windows path.
+    """
+    monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "false")
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    outside = tmp_path / "outside.toml"
+    outside.write_text("[pipeline]\nmax_iterations = 2\n", encoding="utf-8")
+    config_path = "linked.toml"
+    try:
+        (workspace / config_path).symlink_to(outside)
+    except OSError:
+        if str(outside).startswith("/"):
+            raise
+        config_path = str(outside)
+    configure(workspace=workspace, artifacts=tmp_path / "runs")
+
+    resp = TestClient(app).post(
+        "/api/runs", json={"request": "Add endpoint", "config_path": config_path}
+    )
+
+    assert resp.status_code == 422
+    assert "escapes workspace" in resp.json()["detail"]
+    assert started_runs == []
+
+
 @pytest.mark.parametrize("rel", [".delegatron-runs/abc123/evil.toml", "runs/abc123/evil.toml"])
 def test_create_run_refuses_a_config_a_run_could_have_written(
     client: TestClient, tmp_path: Path, rel: str
@@ -192,8 +285,18 @@ def test_create_run_refuses_a_config_a_run_could_have_written(
     assert "Delegatron directory" in resp.json()["detail"]
 
 
-def test_github_webhook_rejected_without_secret(client: TestClient):
+@pytest.fixture
+def webhook_secret(monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.setattr(app_module, "_webhook_secret", _TEST_WEBHOOK_SECRET)
+    return _TEST_WEBHOOK_SECRET
+
+
+def test_github_webhook_rejected_without_secret(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
     """Webhook should reject requests when no secret is configured."""
+    # Explicit, so a developer's DELEGATRON_WEBHOOK_SECRET can't change the outcome.
+    monkeypatch.setattr(app_module, "_webhook_secret", None)
     resp = client.post(
         "/api/webhooks/github",
         json={"action": "opened"},
@@ -202,22 +305,17 @@ def test_github_webhook_rejected_without_secret(client: TestClient):
     assert resp.status_code == 403
 
 
-def test_github_webhook_rejected_bad_signature(client: TestClient):
+def test_github_webhook_rejected_bad_signature(client: TestClient, webhook_secret: str):
     """Webhook should reject requests with invalid signature."""
-    old_secret = app_module._webhook_secret
-    app_module._webhook_secret = _TEST_WEBHOOK_SECRET
-    try:
-        resp = client.post(
-            "/api/webhooks/github",
-            json={"action": "opened"},
-            headers={
-                "X-GitHub-Event": "push",
-                "X-Hub-Signature-256": "sha256=invalid",
-            },
-        )
-        assert resp.status_code == 403
-    finally:
-        app_module._webhook_secret = old_secret
+    resp = client.post(
+        "/api/webhooks/github",
+        json={"action": "opened"},
+        headers={
+            "X-GitHub-Event": "push",
+            "X-Hub-Signature-256": "sha256=invalid",
+        },
+    )
+    assert resp.status_code == 403
 
 
 def _post_webhook(client: TestClient, payload: dict, event: str) -> "Response":  # noqa: F821
@@ -235,34 +333,50 @@ def _post_webhook(client: TestClient, payload: dict, event: str) -> "Response": 
     )
 
 
-def test_github_webhook_ignored(client: TestClient):
+def test_github_webhook_ignored(
+    client: TestClient, webhook_secret: str, started_runs: list[dict[str, Any]]
+):
     """Webhook with valid signature but unhandled event type is ignored."""
-    old_secret = app_module._webhook_secret
-    app_module._webhook_secret = _TEST_WEBHOOK_SECRET
-    try:
-        resp = _post_webhook(client, {"action": "opened"}, "push")
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "ignored"
-    finally:
-        app_module._webhook_secret = old_secret
+    resp = _post_webhook(client, {"action": "opened"}, "push")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ignored"
+    assert started_runs == []
 
 
-def test_github_webhook_trigger(client: TestClient):
+def test_github_webhook_trigger(
+    client: TestClient, tmp_path: Path, webhook_secret: str, started_runs: list[dict[str, Any]]
+):
     """Webhook with valid signature triggers a run from issue comment."""
-    old_secret = app_module._webhook_secret
-    app_module._webhook_secret = _TEST_WEBHOOK_SECRET
-    try:
-        payload = {
-            "action": "created",
-            "comment": {"body": "/delegatron run Fix the login bug"},
-        }
-        resp = _post_webhook(client, payload, "issue_comment")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "started"
-        assert "run_id" in data
-    finally:
-        app_module._webhook_secret = old_secret
+    payload = {
+        "action": "created",
+        "comment": {"body": "/delegatron run Fix the login bug"},
+    }
+    resp = _post_webhook(client, payload, "issue_comment")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "started"
+    [call] = started_runs
+    assert call["run_id"] == data["run_id"]
+    assert call["req"].request == "Fix the login bug"
+    meta = json.loads((tmp_path / "runs" / data["run_id"] / "meta.json").read_text())
+    assert meta == {"team_id": "default", "user_id": "webhook"}
+
+
+def test_github_webhook_disabled_when_auth_is_enabled(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    webhook_secret: str,
+    started_runs: list[dict[str, Any]],
+):
+    """With auth on there is no repo-to-team binding, so a signed webhook is refused."""
+    monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "true")
+    payload = {"action": "created", "comment": {"body": "/delegatron run Fix it"}}
+
+    resp = _post_webhook(client, payload, "issue_comment")
+
+    assert resp.status_code == 403
+    assert "auth is enabled" in resp.json()["detail"]
+    assert started_runs == []
 
 
 def test_stream_events_from_file(client: TestClient, tmp_path: Path):
@@ -297,8 +411,8 @@ def auth_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     # Point stores at tmp_path so tests are isolated
     db_path = tmp_path / "test.db"
     init_db(db_path)
-    app_module.api_key_manager._db_path = str(db_path)
-    app_module.team_store._db_path = str(db_path)
+    monkeypatch.setattr(app_module.api_key_manager, "_db_path", str(db_path))
+    monkeypatch.setattr(app_module.team_store, "_db_path", str(db_path))
 
     return TestClient(app)
 
@@ -337,7 +451,9 @@ def test_auth_valid_token_list_runs(auth_client: TestClient, tmp_path: Path):
     assert resp.json() == []
 
 
-def test_auth_create_run(auth_client: TestClient, tmp_path: Path):
+def test_auth_create_run(
+    auth_client: TestClient, tmp_path: Path, started_runs: list[dict[str, Any]]
+):
     """Authenticated user can create a run."""
     raw_key, team_id, _user_id = _create_test_key(tmp_path)
     resp = auth_client.post(
@@ -355,6 +471,8 @@ def test_auth_create_run(auth_client: TestClient, tmp_path: Path):
     assert meta_path.exists()
     meta = json.loads(meta_path.read_text())
     assert meta["team_id"] == team_id
+    assert [call["run_id"] for call in started_runs] == [run_id]
+    assert started_runs[0]["req"].request == "Add tests"
 
 
 def test_auth_team_filtering(auth_client: TestClient, tmp_path: Path):
@@ -527,9 +645,26 @@ def test_get_run_nonexistent_with_auth(auth_client: TestClient, tmp_path: Path):
 # --- Project mode API tests ---
 
 
-def test_create_project(client: TestClient):
+@pytest.fixture
+def project_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(app_module._feature_flags, "project_mode", True)
+
+
+def _recorder(monkeypatch: pytest.MonkeyPatch, name: str) -> list[tuple[Any, ...]]:
+    """Replace the background coroutine ``app_module.<name>`` with one that records its args."""
+    calls: list[tuple[Any, ...]] = []
+
+    def _record(*args: Any) -> Any:
+        calls.append(args)  # at call time, before the task is even scheduled
+        return asyncio.sleep(0)
+
+    monkeypatch.setattr(app_module, name, _record)
+    return calls
+
+
+def test_create_project(client: TestClient, tmp_path: Path, project_mode: None, monkeypatch):
     """POST /api/projects should start a project run."""
-    app_module._feature_flags["project_mode"] = True
+    started = _recorder(monkeypatch, "_execute_project")
     resp = client.post(
         "/api/projects",
         json={"request": "Build a todo app", "preset": "mock", "max_milestones": 3},
@@ -537,14 +672,38 @@ def test_create_project(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "running"
-    assert "project_id" in data
-    assert data["project_id"].startswith("proj-")
+    project_id = data["project_id"]
+    assert project_id.startswith("proj-")
+
+    assert started == [(project_id, "Build a todo app", "mock", 3, 5, 50.0, 120)]
+    persisted = json.loads((tmp_path / "data" / "projects" / f"{project_id}.json").read_text())
+    assert persisted["project_id"] == project_id
+    assert persisted["status"] == "running"
+    assert persisted["request"] == "Build a todo app"
+    assert persisted["preset"] == "mock"
+    assert persisted["team_id"] is None
 
 
-def test_create_project_missing_request(client: TestClient):
+def test_create_project_missing_request(client: TestClient, project_mode: None, monkeypatch):
     """POST /api/projects should reject empty request."""
+    started = _recorder(monkeypatch, "_execute_project")
     resp = client.post("/api/projects", json={"preset": "mock"})
     assert resp.status_code == 400
+    assert started == []
+
+
+def test_create_project_is_refused_while_project_mode_is_off(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    started = _recorder(monkeypatch, "_execute_project")
+    monkeypatch.setitem(app_module._feature_flags, "project_mode", False)
+
+    resp = client.post("/api/projects", json={"request": "Build a todo app", "preset": "mock"})
+
+    assert resp.status_code == 403
+    assert "Project mode is disabled" in resp.json()["detail"]
+    assert started == []
+    assert not (tmp_path / "data" / "projects").exists()
 
 
 def test_get_project_not_found(client: TestClient):
@@ -624,8 +783,9 @@ def test_get_project_persisted(client: TestClient, tmp_path: Path):
 # --- SWE-bench API tests ---
 
 
-def test_start_swebench(client: TestClient):
+def test_start_swebench(client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """POST /api/swebench should start a SWE-bench evaluation."""
+    started = _recorder(monkeypatch, "_execute_swebench")
     resp = client.post(
         "/api/swebench",
         json={"preset": "mock", "split": "lite", "instances": 5},
@@ -633,8 +793,15 @@ def test_start_swebench(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "running"
-    assert "eval_id" in data
-    assert data["eval_id"].startswith("swe-")
+    eval_id = data["eval_id"]
+    assert eval_id.startswith("swe-")
+
+    assert started == [(eval_id, "mock", "lite", 5, None, 5)]
+    persisted = json.loads((tmp_path / "data" / "swebench" / f"{eval_id}.json").read_text())
+    assert persisted["eval_id"] == eval_id
+    assert persisted["status"] == "running"
+    assert persisted["split"] == "lite"
+    assert persisted["total_instances"] == 5
 
 
 def test_get_swebench_not_found(client: TestClient):
@@ -1219,6 +1386,139 @@ async def test_a_fresh_run_gets_its_own_new_workspace(
     target = tmp_path / ".delegatron-runs" / "fresh1"
     assert resume_env == [(tmp_path, target, "fresh1")]
     assert _ResumePipeline.workspaces == [target]
+
+
+# --- Spend in a summary the server writes ---
+
+
+async def test_a_fresh_run_without_a_pipeline_summary_reports_its_whole_cost(
+    tmp_path: Path, resume_env: list[tuple[Path, Path, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        _ResumePipeline, "final_state", {"status": "approved", "total_cost_usd": 4.8}
+    )
+
+    await app_module._execute_run("c1", app_module.RunRequest(request="x", preset="mock"))
+
+    summary = json.loads((tmp_path / "runs" / "c1" / "summary.json").read_text())
+    assert summary["status"] == "approved"
+    assert summary["total_cost_usd"] == 4.8
+    assert summary["request"] == "x"
+
+
+async def test_a_fresh_run_summary_counts_logged_calls_the_pipeline_did_not_report(
+    tmp_path: Path, resume_env: list[tuple[Path, Path, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The larger of the pipeline's total and the provider call log wins."""
+    log = tmp_path / "runs" / "c2" / "provider_calls.jsonl"
+    log.parent.mkdir(parents=True)
+    log.write_text(json.dumps({"cost_usd": 0.5}) + "\n" + json.dumps({"cost_usd": 0.75}) + "\n")
+    monkeypatch.setattr(
+        _ResumePipeline, "final_state", {"status": "approved", "total_cost_usd": 0.25}
+    )
+
+    await app_module._execute_run("c2", app_module.RunRequest(request="x", preset="mock"))
+
+    summary = json.loads((tmp_path / "runs" / "c2" / "summary.json").read_text())
+    assert summary["total_cost_usd"] == 1.25
+
+
+async def test_a_resumed_run_summary_keeps_the_cumulative_cost(
+    tmp_path: Path, resume_env: list[tuple[Path, Path, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The pipeline reports the total across sessions (4.80 earlier + 0.30 now)."""
+    run_dir = _write_stopped_run(
+        tmp_path, "c3", summary={"status": "error", "request": "x"}, states={3: {}}
+    )
+    monkeypatch.setattr(
+        _ResumePipeline, "final_state", {"status": "approved", "total_cost_usd": 5.1}
+    )
+
+    state = {"iteration": 3, "total_cost_usd": 4.8}
+    await app_module._execute_run("c3", app_module.RunRequest(request="x"), initial_state=state)
+
+    summary = json.loads((run_dir / "summary.json").read_text())
+    assert summary["status"] == "approved"
+    assert summary["total_cost_usd"] == pytest.approx(5.1)
+
+
+# --- One run at a time ---
+
+
+async def test_a_second_run_is_queued_until_the_first_releases_the_slot(
+    tmp_path: Path, resume_env: list[tuple[Path, Path, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(app_module, "_run_semaphore", asyncio.Semaphore(1))
+    events: dict[str, list[dict[str, Any] | None]] = {}
+
+    async def _record(run_id: str, event: dict[str, Any] | None) -> None:
+        events.setdefault(run_id, []).append(event)
+
+    monkeypatch.setattr(app_module, "_broadcast", _record)
+    release = asyncio.Event()
+    real_execute = _ResumePipeline.execute
+
+    async def _first_waits(self: _ResumePipeline, request: str, **kwargs: Any) -> dict[str, Any]:
+        if self._kwargs["run_id"] == "first":
+            await release.wait()
+        return await real_execute(self, request, **kwargs)
+
+    monkeypatch.setattr(_ResumePipeline, "execute", _first_waits)
+    req = app_module.RunRequest(request="x", preset="mock")
+
+    first = asyncio.create_task(app_module._execute_run("first", req))
+    for _ in range(50):
+        await asyncio.sleep(0)
+    assert app_module._run_semaphore.locked()
+    second = asyncio.create_task(app_module._execute_run("second", req))
+    for _ in range(50):
+        await asyncio.sleep(0)
+
+    second_events = [e["event"] for e in events.get("second", []) if e]
+    assert second_events == ["queued"]
+    assert _ResumePipeline.executed == []
+
+    release.set()
+    await asyncio.wait_for(asyncio.gather(first, second), timeout=5)
+
+    assert [e["event"] for e in events["second"] if e][:2] == ["queued", "started"]
+    assert "queued" not in [e["event"] for e in events["first"] if e]
+    assert [request for request, _ in _ResumePipeline.executed] == ["x", "x"]
+    assert not app_module._run_semaphore.locked()
+
+
+async def test_a_run_cancelled_while_queued_never_takes_the_slot(
+    tmp_path: Path, resume_env: list[tuple[Path, Path, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    semaphore = asyncio.Semaphore(1)
+    monkeypatch.setattr(app_module, "_run_semaphore", semaphore)
+    cleanups: list[tuple[Any, ...]] = []
+    monkeypatch.setattr(app_module, "_cleanup_cancelled_run", lambda *a: cleanups.append(a))
+
+    async def _no_alert(*_args: Any) -> None:
+        return None
+
+    monkeypatch.setattr(app_module, "_send_alert_webhook", _no_alert)
+    await semaphore.acquire()  # another run holds the slot
+    queued = asyncio.create_task(
+        app_module._execute_run("waiting", app_module.RunRequest(request="x", preset="mock"))
+    )
+    for _ in range(5):
+        await asyncio.sleep(0)
+
+    queued.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await queued
+
+    summary = json.loads((tmp_path / "runs" / "waiting" / "summary.json").read_text())
+    assert summary["status"] == "cancelled"
+    assert summary["error"] == "Cancelled while waiting for GPU slot"
+    assert _ResumePipeline.executed == []
+    assert cleanups == [("waiting", None, None)]
+    # The slot is still the other run's: the cancelled one released nothing.
+    assert semaphore.locked()
+    semaphore.release()
+    assert not semaphore.locked()
 
 
 # --- Spend of a cancelled session ---

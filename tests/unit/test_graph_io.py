@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -221,6 +222,7 @@ def _git(cwd: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "user.name=T", "-c", "user.email=t@t", *args],
         cwd=cwd,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull},  # no global hooks/signing
         capture_output=True,
         text=True,
         check=True,
@@ -723,9 +725,9 @@ class TestTestHistory:
         signatures: list[list[str]] = []
         original = Pipeline._finish_task
 
-        def finish(self: Pipeline, state: Any, store: Any, status: str) -> bool:
+        def finish(self: Pipeline, state: Any, store: Any, status: str, **kw: Any) -> bool:
             signatures.append(list(state["_failure_signatures"]))
-            return original(self, state, store, status)
+            return original(self, state, store, status, **kw)
 
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr(Pipeline, "_finish_task", finish)

@@ -9,6 +9,7 @@ Exercises the primary user journeys end-to-end through the CLI:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -36,12 +37,12 @@ def mock_workspace(tmp_path: Path) -> Path:
     - One initial commit so the workspace is valid
     """
     env = {
+        **os.environ,
         "GIT_AUTHOR_NAME": "Test",
         "GIT_AUTHOR_EMAIL": "test@test.com",
         "GIT_COMMITTER_NAME": "Test",
         "GIT_COMMITTER_EMAIL": "test@test.com",
         "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
     }
 
     # Initialise git repo
@@ -131,11 +132,12 @@ def test_run_full_pipeline_mock(runner: CliRunner, mock_workspace: Path) -> None
 
     assert result.exit_code == 0, f"CLI exited with code {result.exit_code}:\n{result.output}"
 
-    # The pipeline should reach an APPROVED or terminal status
+    # The stub sandbox passes every test run (tests/conftest.py): the mock plan's
+    # t1 is approved; t2 stalls (the mock patch only applies once), so the run
+    # is partial.
     output = result.output
-    assert "APPROVED" in output or "EXHAUSTED" in output, (
-        f"Expected APPROVED or EXHAUSTED in output, got:\n{output}"
-    )
+    assert "PARTIAL" in output, f"Expected PARTIAL in output, got:\n{output}"
+    assert "EXHAUSTED" not in output
 
     # Sanity-check that the run finished in a reasonable time (mock should be fast)
     assert elapsed < 120, f"Run took {elapsed:.1f}s — expected under 120s for mock providers"
@@ -179,10 +181,10 @@ def test_run_json_output(runner: CliRunner, mock_workspace: Path) -> None:
         except json.JSONDecodeError:
             pass
     assert state is not None, f"Could not find state JSON in output:\n{output[:500]}"
-    assert state["status"] in ("approved", "partial", "exhausted", "stalled")
+    assert state["status"] == "partial"
     assert state["plan"] is not None
-    assert state["iteration"] >= 1
-    assert state["total_cost_usd"] >= 0
+    assert state["iteration"] == 4
+    assert 0 <= state["total_cost_usd"] < 0.01
 
 
 # ---------------------------------------------------------------------------
@@ -329,30 +331,9 @@ def test_resume_missing_checkpoint(runner: CliRunner, mock_workspace: Path) -> N
 
 
 @pytest.fixture()
-def passing_sandbox(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
-    """A sandbox whose every test run passes (no Docker); records the patches it ran."""
-    from delegatron.orchestrator import graph
-
-    runs: list[dict] = []
-
-    class _Sandbox:
-        async def apply_and_test(self, patch: dict) -> dict:
-            runs.append(patch)
-            return {
-                "passed": True,
-                "total": 1,
-                "failures": 0,
-                "stdout": "tests/test_health.py::test_ok PASSED\n1 passed in 0.01s",
-                "stderr": "",
-                "failed_tests": [],
-                "results": [{"name": "tests/test_health.py::test_ok", "passed": True}],
-            }
-
-        def cleanup(self) -> None:
-            pass
-
-    monkeypatch.setattr(graph, "create_sandbox", lambda **kwargs: _Sandbox())
-    return runs
+def passing_sandbox(sandbox_runs: list[dict]) -> list[dict]:
+    """The patches the stub sandbox ran (every test run passes; tests/conftest.py)."""
+    return sandbox_runs
 
 
 def _task(task_id: str, title: str, depends_on: list[str]) -> dict:

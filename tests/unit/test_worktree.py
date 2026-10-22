@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -15,12 +16,13 @@ from delegatron.worktree import WorktreeError, WorktreeInfo, WorktreeManager, wo
 def git_repo(tmp_path: Path) -> Path:
     """Create a temporary git repo with an initial commit."""
     env = {
+        **os.environ,
         "GIT_AUTHOR_NAME": "Test",
         "GIT_AUTHOR_EMAIL": "test@test.com",
         "GIT_COMMITTER_NAME": "Test",
         "GIT_COMMITTER_EMAIL": "test@test.com",
-        "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
+        # A developer's global config (signing, hooks, init.defaultBranch) stays out.
+        "GIT_CONFIG_GLOBAL": os.devnull,
     }
 
     def _git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -33,7 +35,7 @@ def git_repo(tmp_path: Path) -> Path:
             env=env,
         )
 
-    _git("init")
+    _git("init", "-b", "main")
     _git("config", "user.email", "test@test.com")
     _git("config", "user.name", "Test")
     _git("config", "commit.gpgsign", "false")

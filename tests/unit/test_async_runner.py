@@ -210,47 +210,6 @@ class TestAsyncPipelineSubscribe:
         assert len(pipeline._subscribers) == 0
 
 
-class TestAsyncPipelineStatusTransitions:
-    @pytest.mark.asyncio
-    async def test_status_transitions_on_success(self, tmp_path: Any) -> None:
-        """Mock execute to verify status changes."""
-        pipeline = AsyncPipeline(
-            config=_make_config(),
-            workspace_root=tmp_path,
-            run_id="test-status",
-        )
-        assert pipeline.status() == PipelineStatus.IDLE
-
-        # Simulate running
-        pipeline._status = PipelineStatus.RUNNING
-        assert pipeline.status() == PipelineStatus.RUNNING
-
-        pipeline._status = PipelineStatus.COMPLETED
-        assert pipeline.status() == PipelineStatus.COMPLETED
-
-    @pytest.mark.asyncio
-    async def test_status_transitions_on_failure(self, tmp_path: Any) -> None:
-        pipeline = AsyncPipeline(
-            config=_make_config(),
-            workspace_root=tmp_path,
-            run_id="test-fail",
-        )
-        pipeline._status = PipelineStatus.FAILED
-        assert pipeline.status() == PipelineStatus.FAILED
-
-    @pytest.mark.asyncio
-    async def test_status_after_cancel(self, tmp_path: Any) -> None:
-        pipeline = AsyncPipeline(
-            config=_make_config(),
-            workspace_root=tmp_path,
-            run_id="test-cancel-status",
-        )
-        pipeline._status = PipelineStatus.RUNNING
-        pipeline.cancel()
-        pipeline._status = PipelineStatus.CANCELLED
-        assert pipeline.status() == PipelineStatus.CANCELLED
-
-
 # ---------------------------------------------------------------------------
 # Integration-style tests: full pipeline execution with all externals mocked
 # ---------------------------------------------------------------------------

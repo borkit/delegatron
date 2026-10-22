@@ -38,7 +38,8 @@ def test_no_modify_glob_pattern():
     patch = {"diff_unified": "--- a/.env\n+++ b/.env\n+SECRET=bad"}
     constraints = Constraints(no_modify=[".*", "*.env"])
     violations = validate_patch(patch, constraints)
-    assert len(violations) >= 1
+    # one violation per file, even when several patterns match it
+    assert [(v.rule, v.file) for v in violations] == [("no_modify", ".env")]
 
 
 def test_forbidden_pattern_detected():
@@ -245,6 +246,20 @@ class TestProtectedPaths:
         constraints = Constraints(no_modify=[".env"])
         violations = validate_patch({"files": {}, "delete_files": ["config/.env"]}, constraints)
         assert [(v.rule, v.file) for v in violations] == [("no_modify", "config/.env")]
+
+    def test_diff_deleting_a_protected_file_is_a_violation(self):
+        diff = "--- a/LICENSE\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-MIT License\n-text\n"
+        violations = validate_patch({"diff_unified": diff}, Constraints(no_modify=["LICENSE"]))
+        assert [(v.rule, v.file) for v in violations] == [("no_modify", "LICENSE")]
+
+    def test_diff_creating_a_file_names_no_source(self):
+        diff = "--- /dev/null\n+++ b/src/new.py\n@@ -0,0 +1 @@\n+x = 1\n"
+        assert validate_patch({"diff_unified": diff}, Constraints(no_modify=["LICENSE"])) == []
+
+    def test_removed_line_starting_with_dashes_is_not_a_header(self):
+        # "--- a/LICENSE" here is a removed line ("-- a/LICENSE"), not a file header
+        diff = "--- a/notes.md\n+++ b/notes.md\n@@ -1,2 +1 @@\n--- a/LICENSE\n keep\n"
+        assert validate_patch({"diff_unified": diff}, Constraints(no_modify=["LICENSE"])) == []
 
 
 # ---------------------------------------------------------------------------

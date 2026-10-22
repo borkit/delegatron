@@ -988,3 +988,79 @@ class TestRefineReopensTheTask:
         assert state["_skipped_tasks"] == []
         assert state["_failure_signatures"] == []
         assert state["review_report"]["issues"][0]["details"] == "deal five cards"
+
+
+# --- serve ---
+
+
+class _ServeStubs:
+    """What `delegatron serve` would have started, killed or configured."""
+
+    def __init__(self) -> None:
+        self.uvicorn: list[dict[str, Any]] = []
+        self.commands: list[list[str]] = []
+        self.configured: list[Path] = []
+
+
+@pytest.fixture
+def serve_stubs(monkeypatch: pytest.MonkeyPatch) -> _ServeStubs:
+    """Nothing binds a port, frees one, spawns the dashboard or opens a browser."""
+    import uvicorn
+
+    import delegatron.server.app as app_module
+
+    stubs = _ServeStubs()
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: stubs.uvicorn.append(kwargs))
+
+    class _Proc:
+        def terminate(self) -> None:
+            pass
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 0
+
+    def _run(cmd: list[str], *_args: Any, **_kwargs: Any) -> Any:
+        stubs.commands.append(cmd)  # the port-freeing commands: recorded, never run
+        return cli.subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    def _popen(cmd: list[str], *_args: Any, **_kwargs: Any) -> _Proc:
+        stubs.commands.append(cmd)  # the dashboard, when it is built
+        return _Proc()
+
+    monkeypatch.setattr(cli.subprocess, "run", _run)
+    monkeypatch.setattr(cli.subprocess, "Popen", _popen)
+    monkeypatch.setattr("webbrowser.open", lambda *_a, **_k: True)
+
+    def _configure(workspace: Path) -> None:
+        stubs.configured.append(workspace)
+
+    monkeypatch.setattr(app_module, "configure", _configure)
+    return stubs
+
+
+def test_serve_binds_to_localhost_by_default(tmp_path: Path, serve_stubs: _ServeStubs) -> None:
+    result = CliRunner().invoke(cli.main, ["serve", "--workspace", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    [kwargs] = serve_stubs.uvicorn
+    assert kwargs["host"] == "127.0.0.1"
+    assert kwargs["port"] == 8000
+    assert serve_stubs.configured == [tmp_path.resolve()]
+    freed = [cmd for cmd in serve_stubs.commands if cmd[0] == "powershell"]
+    assert [("8000" in cmd[-1], "8001" in cmd[-1]) for cmd in freed] == [
+        (True, False),
+        (False, True),
+    ]
+
+
+def test_serve_binds_to_the_requested_host_and_port(
+    tmp_path: Path, serve_stubs: _ServeStubs
+) -> None:
+    args = ["serve", "--workspace", str(tmp_path), "--host", "0.0.0.0", "--port", "8123"]
+
+    result = CliRunner().invoke(cli.main, args)
+
+    assert result.exit_code == 0, result.output
+    [kwargs] = serve_stubs.uvicorn
+    assert (kwargs["host"], kwargs["port"]) == ("0.0.0.0", 8123)
+    assert "http://localhost:8123" in result.output

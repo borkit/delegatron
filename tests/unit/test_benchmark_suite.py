@@ -104,11 +104,17 @@ class TestBenchmarkSuiteInit:
 
 
 class TestMockRun:
+    """The mock preset never runs the pipeline: ``run_case`` returns a synthetic
+    passing result (offline use).  These tests pin that contract and how
+    ``run_all`` aggregates results; the real pipeline path is ``TestLiveRun``."""
+
     @pytest.mark.asyncio
     async def test_run_case_mock_preset(self) -> None:
         case = BenchmarkCase(name="test_mock", request="do something")
         suite = BenchmarkSuite(cases=[case])
-        result = await suite.run_case(case, preset="mock")
+        with patch.object(suite, "_live_run", new_callable=AsyncMock) as live_run:
+            result = await suite.run_case(case, preset="mock")
+        live_run.assert_not_awaited()
 
         assert result.passed is True
         assert result.case_name == "test_mock"

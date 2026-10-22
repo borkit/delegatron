@@ -4,6 +4,7 @@ Tests the full orchestration loop without any API keys:
 architect -> implementer -> sandbox -> reviewer -> route -> iterate
 """
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -28,16 +29,21 @@ def _create_mock_config() -> Config:
     )
 
 
+def _outcomes(state: dict) -> dict[str, tuple[str, int]]:
+    """Each task's outcome status and the iterations it took."""
+    return {t: (row["status"], row["iterations"]) for t, row in state["_task_outcomes"].items()}
+
+
 @pytest.fixture
 def mock_workspace(tmp_path: Path) -> Path:
     """Create a minimal Python project for testing."""
     env = {
+        **os.environ,
         "GIT_AUTHOR_NAME": "Test",
         "GIT_AUTHOR_EMAIL": "test@test.com",
         "GIT_COMMITTER_NAME": "Test",
         "GIT_COMMITTER_EMAIL": "test@test.com",
         "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
     }
 
     # Init git repo
@@ -81,8 +87,8 @@ def mock_workspace(tmp_path: Path) -> Path:
 
 
 @pytest.mark.asyncio
-async def test_full_pipeline_with_mock(mock_workspace: Path):
-    """Run the full pipeline with mock providers and verify it completes."""
+async def test_full_pipeline_with_mock(mock_workspace: Path, sandbox_runs: list[dict]):
+    """Run the full pipeline with mock providers and the stub sandbox (tests/conftest.py)."""
     config = _create_mock_config()
 
     pipeline = Pipeline(
@@ -93,19 +99,23 @@ async def test_full_pipeline_with_mock(mock_workspace: Path):
 
     state = await pipeline.execute("Add a GET /health endpoint that returns status and uptime")
 
-    # Pipeline should complete (either approved or exhausted after iterations)
-    assert state["status"] in ("approved", "partial", "exhausted", "stalled")
+    # Every stub test run passes.  t1 is approved on its first pass (the mock
+    # reviewer's one issue is minor); the mock implementer's patch creates
+    # src/app/health.py again, so it never applies to t2, which stalls.
+    assert state["status"] == "partial", state.get("_termination_reason")
+    assert state["is_approved"] is False
+    assert _outcomes(state) == {"t1": ("approved", 1), "t2": ("stalled", 3)}
 
     # Plan should have been created
     assert state["plan"] is not None
     assert state["plan"]["summary"] != ""
     assert len(state["plan"]["tasks"]) > 0
 
-    # Should have run at least 1 iteration
-    assert state["iteration"] >= 1
+    assert state["iteration"] == 4
+    assert sandbox_runs, "the stub sandbox never ran a patch"
 
-    # Cost should be tracked (mock/local models may be free, so >= 0)
-    assert state["total_cost_usd"] >= 0
+    # Mock models have no API cost (a local GPU estimate may add a fraction of a cent)
+    assert 0 <= state["total_cost_usd"] < 0.01
 
     # Messages should contain the audit trail
     events = [m.get("event") for m in state["messages"] if "event" in m]
@@ -122,13 +132,10 @@ async def test_full_pipeline_with_mock(mock_workspace: Path):
 
 @pytest.mark.asyncio
 async def test_pipeline_respects_iteration_limit(mock_workspace: Path):
-    """Verify the pipeline stops at max_iterations."""
+    """Verify each task stops at max_iterations (a per-task limit)."""
     config = Config(
         architect=RoleConfig(provider="mock", model="mock-architect"),
         implementer=RoleConfig(provider="mock", model="mock-implementer"),
-        # Use a reviewer that always requires changes (call_count never > 1
-        # because a new reviewer is created per pipeline, but the mock reviewer
-        # approves on call 2, so with max_iterations=1 we should exhaust)
         reviewer=RoleConfig(provider="mock", model="mock-reviewer"),
         pipeline=PipelineConfig(max_iterations=1, max_cost_usd=100.0),
     )
@@ -141,10 +148,11 @@ async def test_pipeline_respects_iteration_limit(mock_workspace: Path):
 
     state = await pipeline.execute("Test iteration limit")
 
-    # Should stop after 1 iteration (reviewer requests changes on first call,
-    # but we hit max_iterations before the second iteration)
-    assert state["iteration"] <= 2
-    assert state["status"] in ("approved", "exhausted")
+    # One iteration per task: t1 is approved on it; t2's patch never applies
+    # and the limit leaves it no second attempt.
+    assert state["iteration"] == 2
+    assert state["status"] == "partial", state.get("_termination_reason")
+    assert _outcomes(state) == {"t1": ("approved", 1), "t2": ("exhausted", 1)}
 
 
 @pytest.mark.asyncio

@@ -241,3 +241,28 @@ class TestExtractImports:
     def test_non_import_lines_skipped(self) -> None:
         results = _extract_imports(["x = 1", "# import os", "print('hello')"])
         assert results == []
+
+    @pytest.mark.parametrize(
+        ("line", "modules"),
+        [
+            ("import os, numpy", ["os", "numpy"]),
+            ("import numpy as np, pandas as pd", ["numpy", "pandas"]),
+            ("import os.path as osp,yaml", ["os", "yaml"]),
+            ("import requests as r  # http", ["requests"]),
+        ],
+    )
+    def test_every_module_of_a_comma_import(self, line: str, modules: list[str]) -> None:
+        assert _extract_imports([line]) == [(m, line.strip()) for m in modules]
+
+
+class TestCommaSeparatedImports:
+    def test_third_party_after_stdlib_is_flagged(self) -> None:
+        findings = audit_imports(_make_patch(_make_diff("import os, numpy")), Path("/nonexistent"))
+        assert [(f.package_name, f.import_line) for f in findings] == [
+            ("numpy", "import os, numpy")
+        ]
+
+    def test_aliased_modules_are_flagged(self) -> None:
+        diff = _make_diff("import numpy as np, pandas as pd")
+        findings = audit_imports(_make_patch(diff), Path("/nonexistent"))
+        assert [f.package_name for f in findings] == ["numpy", "pandas"]

@@ -82,10 +82,13 @@ def test_done_tasks_satisfy_dependencies():
     ],
 )
 def test_unresolvable_tasks_get_one_wave_each(
-    tasks: list[dict], caplog: pytest.LogCaptureFixture
+    tasks: list[dict], caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Tasks that can never be ready are not batched into one concurrent wave (#100)."""
+    # CLI tests run setup_logging, which turns off propagation on "delegatron".
+    monkeypatch.setattr(logging.getLogger("delegatron"), "propagate", True)
     with caplog.at_level(logging.WARNING, logger="delegatron.orchestrator.fanout"):
         waves = build_execution_waves(tasks)
 
     assert _ids(waves) == [["t1"], ["t2"], ["t3"], ["t4"]]
+    assert "Cannot resolve dependencies for 3 remaining tasks" in caplog.text

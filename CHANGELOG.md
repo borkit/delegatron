@@ -9,6 +9,12 @@ adhering to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Published by StoriaBrevi LLC as a read-only portfolio showcase. No support; issues and pull requests are not accepted.
 
+### Security
+- **Default API keys only reach their own provider.** `ANTHROPIC_BASE_URL` / `OPENAI_BASE_URL` now count as a role's base URL, so they never receive the default key; the Anthropic SDK's `ANTHROPIC_AUTH_TOKEN` is dropped for any other host; the Google adapter no longer falls back to `GOOGLE_API_KEY` / `GEMINI_API_KEY` when a role may not use environment keys, and honours `base_url`.
+- **Secret scanner** detects PKCS#8, encrypted, DSA and PGP private keys, Google API keys, Slack tokens and OpenAI service-account, admin and legacy keys.
+- **Dependency audit** checks every module of `import a, b`; **constraints** flag a diff that deletes a `no_modify` file.
+- **Tests never touch Ollama, Docker, the network or paid APIs** on a plain `pytest`: integration tests run against a stub sandbox, and live provider tests need `-m live` and `DELEGATRON_LIVE_TESTS=1`.
+
 ### Changed
 - **License: GNU AGPL-3.0** (was MIT). Copyright (C) 2026 StoriaBrevi LLC.
 - **Default Claude model is `claude-sonnet-5-5`.** `claude-sonnet-4-20250514` was retired on 2026-06-15. The Anthropic adapter leaves out `temperature` and forced `tool_choice` for models that reject them.

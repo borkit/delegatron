@@ -49,14 +49,14 @@ def _builtin_template_paths() -> list[Path]:
 )
 class TestBuiltinTemplate:
     def test_loads_without_error(self, tpl_path: Path) -> None:
-        data = json.loads(tpl_path.read_text())
+        data = json.loads(tpl_path.read_text(encoding="utf-8"))
         RunTemplate.from_dict(data)
 
     def test_declared_variables_cover_placeholders(self, tpl_path: Path) -> None:
         """Every ``${var}`` / ``{var}`` placeholder in the pattern must
         have a default value under ``variables``.  Otherwise the
         template is unusable without manually passing the var."""
-        data = json.loads(tpl_path.read_text())
+        data = json.loads(tpl_path.read_text(encoding="utf-8"))
         t = RunTemplate.from_dict(data)
         pattern = t.request_pattern
         # Capture both `${foo}` and standalone `{foo}` (but NOT `{}`).
@@ -74,7 +74,7 @@ class TestBuiltinTemplate:
         """No ``${...}`` or ``{...}`` must remain after rendering with
         the template's own defaults.  Regression for the silent-no-op
         render bug fixed 2026-04-17."""
-        data = json.loads(tpl_path.read_text())
+        data = json.loads(tpl_path.read_text(encoding="utf-8"))
         t = RunTemplate.from_dict(data)
         rendered = t.render()
         # `${...}` remnant (the 2026-04-17 bug signature).
@@ -96,7 +96,7 @@ class TestBuiltinTemplate:
     def test_name_matches_filename(self, tpl_path: Path) -> None:
         """Guard against typos: template.name should match the filename
         stem (case-sensitive)."""
-        data = json.loads(tpl_path.read_text())
+        data = json.loads(tpl_path.read_text(encoding="utf-8"))
         t = RunTemplate.from_dict(data)
         assert t.name == tpl_path.stem, (
             f"Template filename {tpl_path.stem!r} doesn't match its declared name {t.name!r}."
@@ -106,7 +106,7 @@ class TestBuiltinTemplate:
         """Not a hard requirement, but every built-in should have at
         least a brief description so the /templates dashboard can show
         something useful."""
-        data = json.loads(tpl_path.read_text())
+        data = json.loads(tpl_path.read_text(encoding="utf-8"))
         t = RunTemplate.from_dict(data)
         assert t.description and len(t.description) >= 10, (
             f"Template {t.name!r} has a missing or trivial description."

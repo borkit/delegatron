@@ -1,6 +1,6 @@
 """Tests for the event envelope schema models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -105,13 +105,14 @@ class TestPipelineEvent:
         assert e.producer == "reviewer"
 
     def test_occurred_at_auto_populated(self):
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         e = self._make_event()
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
+        assert e.occurred_at.tzinfo is not None
         assert before <= e.occurred_at <= after
 
     def test_occurred_at_custom(self):
-        custom_dt = datetime(2025, 1, 15, 12, 0, 0)
+        custom_dt = datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC)
         e = self._make_event(occurred_at=custom_dt)
         assert e.occurred_at == custom_dt
 

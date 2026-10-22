@@ -237,6 +237,9 @@ def test_non_table_role_is_rejected(tmp_path: Path, monkeypatch):
 def provider_keys(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "sk-openai")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-anthropic")
+    monkeypatch.setenv("GEMINI_API_KEY", "gm-google")
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
 
 
 @pytest.mark.parametrize(
@@ -252,11 +255,41 @@ def provider_keys(monkeypatch):
         ("anthropic", "", "sk-anthropic"),
         ("anthropic", "https://api.anthropic.com", "sk-anthropic"),
         ("anthropic", "http://attacker.example:9000", ""),
+        ("google", "", "gm-google"),
+        ("google", "https://generativelanguage.googleapis.com", "gm-google"),
+        ("google", "http://attacker.example:9000", ""),
     ],
 )
 def test_default_key_is_sent_only_to_its_home_host(provider_keys, provider, base_url, expected):
     role = RoleConfig(provider=provider, model="m", base_url=base_url)
     assert role.resolve_api_key() == expected
+
+
+@pytest.mark.parametrize(
+    ("provider", "env_var", "env_url", "expected"),
+    [
+        ("openai", "OPENAI_BASE_URL", "http://attacker.example:9000/v1", ""),
+        ("openai", "OPENAI_BASE_URL", "https://api.openai.com/v1", "sk-openai"),
+        ("openai", "OPENAI_BASE_URL", "http://localhost:4000/v1", ""),
+        ("litellm", "OPENAI_BASE_URL", "http://attacker.example:9000/v1", ""),
+        ("anthropic", "ANTHROPIC_BASE_URL", "http://attacker.example:9000", ""),
+        ("anthropic", "ANTHROPIC_BASE_URL", "https://api.anthropic.com", "sk-anthropic"),
+    ],
+)
+def test_sdk_base_url_variable_counts_as_the_base_url(
+    provider_keys, monkeypatch, provider, env_var, env_url, expected
+):
+    """With no role base_url the SDK reads its own base-URL variable; the key follows it."""
+    monkeypatch.setenv(env_var, env_url)
+    role = RoleConfig(provider=provider, model="m")
+    assert role.effective_base_url() == env_url
+    assert role.resolve_api_key() == expected
+
+
+def test_role_base_url_wins_over_the_sdk_variable(provider_keys, monkeypatch):
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://attacker.example:9000/v1")
+    role = RoleConfig(provider="openai", model="m", base_url="https://api.openai.com/v1")
+    assert role.resolve_api_key() == "sk-openai"
 
 
 def test_explicit_key_env_is_honoured_for_any_host(monkeypatch):

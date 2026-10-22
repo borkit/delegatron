@@ -771,9 +771,10 @@ class TestJavaValidation:
             "import java.util.List;\n"
             "import javax.swing.JFrame;\n"
             "import java.util.concurrent.ConcurrentHashMap;\n"
+            "import org.junit.jupiter.api.Test;\n"  # proves the file was checked
         )
         issues = validate_patch_imports({"files": {"F.java": code}}, tmp_path)
-        assert issues == []
+        assert [iss.module for iss in issues] == ["org.junit.jupiter.api.Test"]
 
     def test_junit_with_artifact_resolves(self, tmp_path: Path) -> None:
         (tmp_path / "pom.xml").write_text(
@@ -814,9 +815,12 @@ class TestJavaValidation:
         assert issues == []
 
     def test_no_pom_skips(self, tmp_path: Path) -> None:
-        """No pom.xml → skip Java validation entirely."""
+        """No pom.xml → skip Java validation entirely.
+
+        The same import is flagged once a pom without junit exists
+        (``test_junit_without_artifact_flagged``)."""
         issues = validate_patch_imports(
-            {"files": {"F.java": "import org.whatever.thing.Foo;\n"}},
+            {"files": {"F.java": "import org.junit.jupiter.api.Test;\n"}},
             tmp_path,
         )
         assert issues == []

@@ -2,11 +2,14 @@
 
 import json
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from delegatron import prompts
+from delegatron.server import app as server_app
 from delegatron.server.app import app, configure
 
 
@@ -28,20 +31,25 @@ def _init_git_repo(path: Path) -> None:
 
 
 @pytest.fixture
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("DELEGATRON_AUTH_ENABLED", "false")
+    # configure() and set_prompts_dir() change module globals: restored on teardown
+    for name in ("_workspace_root", "_artifacts_base", "_configured"):
+        monkeypatch.setattr(server_app, name, getattr(server_app, name))
+    monkeypatch.setattr(prompts, "_PROMPTS_DIR", prompts._PROMPTS_DIR)
     _init_git_repo(tmp_path)
     configure(workspace=tmp_path, artifacts=tmp_path / "runs")
-    # Reset prompts dir to the real prompts/ in case test_prompts.py ran first
-    from delegatron.prompts import load_prompt, set_prompts_dir
-
+    # Use the real prompts/ in case test_prompts.py pointed elsewhere
     repo_root = Path(__file__).resolve().parent.parent.parent
     prompts_dir = repo_root / "prompts"
     if prompts_dir.exists():
-        set_prompts_dir(prompts_dir)
+        prompts.set_prompts_dir(prompts_dir)
     else:
-        load_prompt.cache_clear()
-    return TestClient(app)
+        prompts.load_prompt.cache_clear()
+    yield TestClient(app)
+    monkeypatch.undo()
+    prompts.load_prompt.cache_clear()
+    server_app._invalidate_runs_cache()
 
 
 # --- Review endpoint ---
@@ -50,8 +58,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
 def test_review_endpoint_exists(client: TestClient):
     """POST /api/review should be a valid route (not 404 or 405)."""
     resp = client.post("/api/review", json={"preset": "mock"})
-    # May fail with 500 (workspace not a git repo), but the route exists
-    assert resp.status_code not in (404, 405)
+    assert resp.status_code == 200, resp.text
 
 
 def test_review_invalid_focus(client: TestClient):
@@ -79,8 +86,7 @@ def test_review_valid_focus_values(client: TestClient):
             "/api/review",
             json={"focus": focus, "preset": "mock"},
         )
-        # Should not be a validation error (may 500 since tmp_path isn't a git repo)
-        assert resp.status_code != 422, f"focus={focus} rejected"
+        assert resp.status_code == 200, f"focus={focus}: {resp.text}"
 
 
 # --- Reviews list endpoint ---

@@ -3,23 +3,27 @@
 Covers:
   - Mid-pipeline error produces summary.json
   - Provider bootstrap failure → error summary
-  - Cancelled run persists summary.json
+  - Cancelled run saves a checkpoint and cleans up
   - Full pipeline run writes all expected artifacts
+  - An error after an approval clears is_approved
+
+Every run uses the stub sandbox of tests/conftest.py (no Docker).
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from delegatron.config import Config, PipelineConfig, RoleConfig
-from delegatron.orchestrator.async_runner import AsyncPipeline, PipelineStatus
 from delegatron.orchestrator.graph import Pipeline
 
 # ---------------------------------------------------------------------------
@@ -31,12 +35,12 @@ from delegatron.orchestrator.graph import Pipeline
 def mock_workspace(tmp_path: Path) -> Path:
     """Minimal git-backed Python project."""
     env = {
+        **os.environ,
         "GIT_AUTHOR_NAME": "Test",
         "GIT_AUTHOR_EMAIL": "test@test.com",
         "GIT_COMMITTER_NAME": "Test",
         "GIT_COMMITTER_EMAIL": "test@test.com",
         "HOME": str(tmp_path),
-        "PATH": "/usr/bin:/bin:/usr/local/bin",
     }
     subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True, env=env)
     subprocess.run(
@@ -164,113 +168,59 @@ async def test_provider_bootstrap_failure_produces_summary(
 
 
 # ---------------------------------------------------------------------------
-# 3. Cancelled async run persists summary.json
+# 3. Cancelled run checkpoints and cleans up
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_cancelled_run_saves_summary(mock_workspace: Path, tmp_path: Path) -> None:
-    """AsyncPipeline cancel produces summary.json with status=cancelled."""
+async def test_cancelled_run_saves_checkpoint(
+    mock_workspace: Path, tmp_path: Path, sandbox_runs: list[dict[str, Any]]
+) -> None:
+    """A run cancelled mid-flight saves a checkpoint, cleans up and re-raises.
+
+    The task is cancelled from the step callback once the plan is announced
+    (``architect_complete``).  ``graph.Pipeline`` writes no summary for a
+    cancelled run: the server does, from the ``CancelledError`` it re-raises.
+    """
     config = _mock_config(max_iterations=10)
     artifacts = tmp_path / "runs"
     run_id = "cancel-001"
+    steps: list[str] = []
+    run: asyncio.Task[Any] | None = None
 
-    _MOD = "delegatron.orchestrator.async_runner"
+    def on_step(step: str, data: dict[str, Any]) -> None:
+        steps.append(step)
+        if step == "architect_complete" and run is not None:
+            run.cancel()
 
-    # Set up mocks for external deps
-    proj = MagicMock()
-    proj.languages = ["python"]
-    proj.frameworks = []
-    proj.test_commands = ["pytest"]
-    proj.lint_commands = []
-    proj.package_manager = "pip"
-
-    ws = MagicMock()
-    ws.get_file_tree.return_value = ["src/__init__.py"]
-    ws.initialize.return_value = MagicMock(branch="run-x", commit_sha="deadbeef1234")
-    ws.apply_patch.return_value = True
-    ws.commit.return_value = "abc12345"
-
-    sandbox_inst = AsyncMock()
-    sandbox_inst.apply_and_test = AsyncMock(
-        return_value={"passed": True, "total": 1, "failures": 0}
+    pipeline = Pipeline(
+        config=config,
+        workspace_root=mock_workspace,
+        run_id=run_id,
+        artifacts_dir=artifacts,
+        step_callback=on_step,
     )
 
-    arch = MagicMock()
-    arch.invoke = AsyncMock(
-        return_value={
-            "summary": "Plan",
-            "tasks": [{"task_id": "t1", "title": "Do"}],
-            "_meta": {"model": "m", "input_tokens": 10, "output_tokens": 10},
-        }
-    )
-    impl = MagicMock()
-    impl.invoke = AsyncMock(
-        return_value={
-            "status": "ok",
-            "rationale": "Done",
-            "diff_unified": "",
-            "_meta": {"model": "m", "input_tokens": 10, "output_tokens": 10},
-        }
-    )
-    rev = MagicMock()
-    rev.invoke = AsyncMock(
-        return_value={
-            "acceptance_met": False,
-            "issues": [{"severity": "minor", "title": "nit"}],
-            "_meta": {"model": "m", "input_tokens": 10, "output_tokens": 10},
-        }
-    )
+    with contextlib.ExitStack() as stack:
+        gpu_cleanup = stack.enter_context(patch(f"{_GRAPH_MOD}.cleanup_after_run"))
+        sandbox_cleanup = stack.enter_context(patch(f"{_GRAPH_MOD}._cleanup_sandbox"))
+        run = asyncio.create_task(pipeline.execute("cancel me"))
+        with pytest.raises(asyncio.CancelledError):
+            await run
 
-    patches = [
-        patch(f"{_MOD}.detect_project", return_value=proj),
-        patch(f"{_MOD}.Workspace", return_value=ws),
-        patch(f"{_MOD}.create_sandbox", return_value=sandbox_inst),
-        patch(f"{_MOD}.create_architect", return_value=arch),
-        patch(f"{_MOD}.create_implementer", return_value=impl),
-        patch(f"{_MOD}.create_reviewer", return_value=rev),
-        patch(f"{_MOD}.CostTracker"),
-        patch(f"{_MOD}.gather_context", return_value={}),
-        patch(f"{_MOD}.should_terminate", return_value=False),
-        patch(f"{_MOD}.detect_stall", return_value=False),
-        patch(f"{_MOD}.get_score_summary", return_value={"score": 0.5}),
-        patch(f"{_MOD}.should_accept", return_value=False),
-        patch("delegatron.orchestrator.router.route_after_review", return_value="implementer"),
-        patch("delegatron.security.secrets.scan_patch", return_value=[]),
-    ]
-    for p in patches:
-        p.__enter__()
+    assert "architect_complete" in steps
+    assert "implementer_start" not in steps
+    assert sandbox_runs == [], "a cancelled run went on to test a patch"
+    gpu_cleanup.assert_called_once_with(config)
+    sandbox_cleanup.assert_called_once()
 
-    try:
-        pipeline = AsyncPipeline(
-            config=config,
-            workspace_root=mock_workspace,
-            run_id=run_id,
-            artifacts_dir=artifacts,
-        )
-
-        async def cancel_after_plan() -> None:
-            async for ev in pipeline.subscribe():
-                if ev.event_type == "plan_created":
-                    pipeline.cancel()
-
-        task = asyncio.create_task(cancel_after_plan())
-        await asyncio.sleep(0)
-        state = await pipeline.execute("cancel me")
-        await asyncio.wait_for(task, timeout=5.0)
-    finally:
-        for p in patches:
-            p.__exit__(None, None, None)
-
-    assert state["status"] == "cancelled"
-    assert pipeline.status() == PipelineStatus.CANCELLED
-
-    # The critical check: summary.json must exist even for cancelled runs
-    summary_path = artifacts / run_id / "summary.json"
-    assert summary_path.exists(), "summary.json missing after cancellation"
-
-    summary = json.loads(summary_path.read_text())
-    assert summary["status"] == "cancelled"
+    run_dir = artifacts / run_id
+    checkpoints = sorted(run_dir.glob("state_*.json"))
+    assert checkpoints, "no checkpoint saved for the cancelled run"
+    saved = json.loads(checkpoints[-1].read_text(encoding="utf-8"))
+    assert saved["status"] == "running"
+    assert saved["plan"]["tasks"]
+    assert not (run_dir / "summary.json").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -343,16 +293,25 @@ async def test_error_clears_is_approved(mock_workspace: Path, tmp_path: Path) ->
         artifacts_dir=artifacts,
     )
 
-    # Architect succeeds, but then we blow up in the implementer
-    with patch.object(
-        pipeline,
-        "_run_implementer",
-        side_effect=RuntimeError("Kaboom"),
-    ):
-        state = await pipeline.execute("break after plan")
+    # The mock reviewer approves task t1 on its second review; persisting that
+    # approved review then fails.
+    record_review = pipeline._record_review
+    approved_before_error: list[bool] = []
 
+    def _record_then_fail(state: Any, store: Any, *, emcs_override: bool) -> None:
+        if state["is_approved"]:
+            approved_before_error.append(True)
+            raise RuntimeError("Kaboom")
+        record_review(state, store, emcs_override=emcs_override)
+
+    with patch.object(pipeline, "_record_review", side_effect=_record_then_fail):
+        state = await pipeline.execute("break after approval")
+
+    assert approved_before_error == [True], "the reviewer never approved before the failure"
     assert state["status"] == "error"
+    assert "Kaboom" in state["error"]
     assert state["is_approved"] is False
 
-    summary = json.loads((artifacts / run_id / "summary.json").read_text())
+    summary = json.loads((artifacts / run_id / "summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "error"
     assert summary["is_approved"] is False

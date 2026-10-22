@@ -239,7 +239,9 @@ class TestValidatePatchImports:
         }
         issues = validate_patch_imports(patch, tmp_path)
         # Python gets a warning (no declared Python deps to compare against).
-        assert any(iss.file == "a.py" for iss in issues)
+        assert [(iss.file, iss.module, iss.severity) for iss in issues] == [
+            ("a.py", "some_nonexistent_package", "warning")
+        ]
 
     def test_multiple_files_multiple_issues(self, tmp_path: Path) -> None:
         _write_pkg(tmp_path, deps={"react": "^18"})

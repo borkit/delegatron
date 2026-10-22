@@ -347,6 +347,16 @@ _PROVIDER_HOME_HOSTS: dict[str, str] = {
     "litellm": "api.openai.com",
 }
 
+# The variable each provider's SDK reads its base URL from when a role sets none.
+# Key resolution treats it as the role's base_url, so ``ANTHROPIC_BASE_URL`` /
+# ``OPENAI_BASE_URL`` pointing at a proxy keeps working (with the proxy's own key
+# named in api_key_env) but never receives the provider's default key.
+_SDK_BASE_URL_ENV: dict[str, str] = {
+    "anthropic": "ANTHROPIC_BASE_URL",
+    "openai": "OPENAI_BASE_URL",
+    "litellm": "OPENAI_BASE_URL",
+}
+
 # Providers that always call their vendor's cloud API, whatever the base_url.
 _CLOUD_ONLY_PROVIDERS = frozenset({"anthropic", "google"})
 
@@ -433,8 +443,9 @@ class RoleConfig:
 
         ``api_key_env`` names the variable explicitly.  Otherwise the provider's
         default variable is used, but only when requests go to that provider's
-        own API host, so a custom ``base_url`` never receives, say,
-        ``OPENAI_API_KEY``.  With ``allow_env_key`` off, only ``api_key`` counts.
+        own API host, so a custom ``base_url`` (or an SDK base-URL variable such
+        as ``OPENAI_BASE_URL``) never receives, say, ``OPENAI_API_KEY``.
+        With ``allow_env_key`` off, only ``api_key`` counts.
         """
         if self.api_key:
             return self.api_key
@@ -443,16 +454,24 @@ class RoleConfig:
         if self.api_key_env:
             return os.environ.get(self.api_key_env, "")
         env_var = DEFAULT_API_KEY_ENV.get(self.provider, "")
-        host = _url_host(self.base_url) if self.base_url else ""
+        base_url = self.effective_base_url()
+        host = _url_host(base_url) if base_url else ""
         if not env_var:
-            if self.base_url and self.provider != "mock" and not is_local_base_url(self.base_url):
-                _log_keyless_endpoint(self.provider, host or self.base_url)
+            if base_url and self.provider != "mock" and not is_local_base_url(base_url):
+                _log_keyless_endpoint(self.provider, host or base_url)
             return ""
-        if self.base_url and host != _PROVIDER_HOME_HOSTS.get(self.provider):
-            if not is_local_base_url(self.base_url):
-                _log_withheld_key(env_var, host or self.base_url, self.model)
+        if base_url and host != _PROVIDER_HOME_HOSTS.get(self.provider):
+            if not is_local_base_url(base_url):
+                _log_withheld_key(env_var, host or base_url, self.model)
             return ""
         return os.environ.get(env_var, "")
+
+    def effective_base_url(self) -> str:
+        """Where requests go: ``base_url``, else the URL the provider's SDK reads
+        from the environment (``""`` means the provider's own API host)."""
+        if self.base_url:
+            return self.base_url
+        return os.environ.get(_SDK_BASE_URL_ENV.get(self.provider, ""), "").strip()
 
     def __repr__(self) -> str:
         """Mask API key in repr to prevent accidental logging."""

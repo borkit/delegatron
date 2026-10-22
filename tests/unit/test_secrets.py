@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import string
 from pathlib import Path
 
 import pytest
@@ -98,10 +99,28 @@ class TestPrivateKeys:
         assert len(findings) == 1
         assert findings[0].pattern_name == "private_key"
 
-    def test_no_false_positive_on_public_key(self) -> None:
-        patch = _make_patch(["-----BEGIN PUBLIC KEY-----"])
-        findings = scan_patch(patch)
-        assert len(findings) == 0
+    @pytest.mark.parametrize(
+        "kind",
+        ["", "ENCRYPTED ", "DSA "],  # PKCS#8, encrypted PKCS#8, DSA
+    )
+    def test_detects_other_private_key_headers(self, kind: str) -> None:
+        findings = scan_patch(_make_patch([f"-----BEGIN {kind}PRIVATE KEY-----"]))
+        assert [(f.pattern_name, f.severity) for f in findings] == [("private_key", "critical")]
+
+    def test_detects_pgp_private_key_block(self) -> None:
+        findings = scan_patch(_make_patch(["-----BEGIN PGP PRIVATE KEY BLOCK-----"]))
+        assert [f.pattern_name for f in findings] == ["private_key"]
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "-----BEGIN PUBLIC KEY-----",
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----",
+            "-----BEGIN CERTIFICATE-----",
+        ],
+    )
+    def test_no_false_positive_on_public_material(self, line: str) -> None:
+        assert scan_patch(_make_patch([line])) == []
 
 
 # ---------------------------------------------------------------------------
@@ -130,6 +149,17 @@ class TestGitHubTokens:
         findings = scan_patch(patch)
         assert any(f.pattern_name == "github_pat" for f in findings)
 
+    @pytest.mark.parametrize(
+        "token",
+        [
+            "ghp_" + "A" * 20,  # too short
+            "ghx_" + "A" * 36,  # not a GitHub prefix
+            "github_pat_" + "X" * 10,  # too short
+        ],
+    )
+    def test_no_false_positive_on_short_or_unknown_token(self, token: str) -> None:
+        assert scan_patch(_make_patch([f"value = {token}"])) == []
+
 
 # ---------------------------------------------------------------------------
 # Stripe keys
@@ -146,6 +176,17 @@ class TestStripeKeys:
         assert findings[0].pattern_name == "stripe_key"
         assert findings[0].severity == "critical"
 
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "pk_live_" + "a1B2" * 6,  # publishable keys are public by design
+            "pk_test_" + "a1B2" * 6,
+            "sk_live_" + "a1B2" * 2,  # too short
+        ],
+    )
+    def test_no_false_positive_on_publishable_or_short_key(self, key: str) -> None:
+        assert scan_patch(_make_patch([f"stripe_public = '{key}'"])) == []
+
 
 # ---------------------------------------------------------------------------
 # Provider API keys
@@ -158,11 +199,32 @@ class TestProviderKeys:
         [
             ("sk-ant-api03-" + "x" * 30, "anthropic_api_key"),
             ("sk-proj-" + "Y" * 30, "openai_api_key"),
+            ("sk-svcacct-" + "Y" * 30, "openai_api_key"),
+            ("sk-" + "Y" * 48, "openai_api_key"),  # legacy key
+            ("AIza" + "A" * 35, "google_api_key"),
+            ("xoxb-" + "1" * 12 + "-" + "2" * 12 + "-" + "A" * 24, "slack_token"),
+            ("xoxp-" + "1" * 12 + "-" + "A" * 32, "slack_token"),
         ],
     )
     def test_detects_provider_key(self, key: str, name: str) -> None:
         findings = scan_patch(_make_patch([f'client = OpenAI(api_key="{key}")']))
         assert [(f.pattern_name, f.severity) for f in findings] == [(name, "critical")]
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "sk-ant-" + "x" * 10,  # too short
+            "sk-proj-" + "Y" * 10,
+            "sk-" + "Y" * 20,  # shorter than a legacy key
+            "sk-" + "Y" * 49,  # longer than a legacy key
+            "sk-your-key-here",
+            "AIza" + "A" * 20,
+            "xoxb-your-token-here",  # no numeric segment
+            "xoxz-" + "1" * 12 + "-" + "A" * 24,  # not a Slack token type
+        ],
+    )
+    def test_no_false_positive_on_placeholder_or_short_key(self, key: str) -> None:
+        assert scan_patch(_make_patch([f"example = '{key}'"])) == []
 
 
 # ---------------------------------------------------------------------------
@@ -229,15 +291,23 @@ class TestConnectionStrings:
 
 
 class TestHighEntropy:
-    def test_detects_high_entropy_base64_in_assignment(self) -> None:
-        # A base64 blob > 40 chars in an assignment context
-        blob = "U2VjcmV0S2V5VGhhdElzVmVyeUxvbmdBbmRTaG91bGRCZURldGVjdGVk"
-        patch = _make_patch([f"secret_key = '{blob}'"])
-        findings = scan_patch(patch)
-        assert len(findings) >= 1
-        # Could match generic_token or high_entropy_string
-        names = {f.pattern_name for f in findings}
-        assert names & {"high_entropy_string", "generic_token", "generic_api_key"}
+    # Obviously fake, built at runtime: every letter and digit once (entropy ~5.95)
+    BASE64_BLOB = string.ascii_letters + string.digits
+    HEX_BLOB = "0123456789abcdef" * 3  # 48 hex characters (entropy 4.0)
+
+    @pytest.mark.parametrize("blob", [BASE64_BLOB, HEX_BLOB])
+    def test_detects_high_entropy_string_in_assignment(self, blob: str) -> None:
+        # Unquoted in a .py file and under a name the generic patterns do not
+        # cover: only the entropy detector can report it.
+        findings = scan_patch(_make_patch([f"signing_secret = {blob}"]))
+        assert [(f.pattern_name, f.severity) for f in findings] == [
+            ("high_entropy_string", "medium")
+        ]
+        assert blob not in findings[0].line_content
+
+    @pytest.mark.parametrize("blob", ["a" * 48, "0" * 40, "ab" * 24])
+    def test_low_entropy_string_is_not_flagged(self, blob: str) -> None:
+        assert scan_patch(_make_patch([f"signing_secret = {blob}"])) == []
 
     def test_no_false_positive_without_assignment_context(self) -> None:
         # High entropy but not in a key-like assignment

@@ -17,8 +17,10 @@ All generated code is scanned for leaked credentials before being committed.
 | GitHub PATs | Critical | `github_pat_...` |
 | Stripe keys | Critical | `sk_live_...`, `sk_test_...`, `rk_live_...` |
 | Anthropic API keys | Critical | `sk-ant-...` |
-| OpenAI project keys | Critical | `sk-proj-...` |
-| Private keys (PEM) | Critical | `-----BEGIN RSA PRIVATE KEY-----` |
+| OpenAI keys | Critical | `sk-proj-...`, `sk-svcacct-...`, `sk-admin-...`, legacy `sk-` + 48 characters |
+| Google API keys | Critical | `AIza...` (39 chars) |
+| Slack tokens | Critical | `xoxb-...`, `xoxp-...` (with a numeric segment) |
+| Private keys (PEM) | Critical | `-----BEGIN PRIVATE KEY-----` (PKCS#8), `ENCRYPTED`, `RSA`, `EC`, `DSA`, `OPENSSH`, and `-----BEGIN PGP PRIVATE KEY BLOCK-----` |
 | Connection strings | High | `postgres://user:pass@db.example.com/db` — only with a password and a non-loopback host |
 | Generic API keys | High | `api_key = "<20+ char quoted literal>"` |
 | Generic tokens / passwords | High | `token = "eyJhbGci..."`, `password = "..."` |

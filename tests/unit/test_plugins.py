@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -179,14 +180,7 @@ class TestPluginDiscoverEntryPoints:
         mock_ep.name = "ep-plugin"
         mock_ep.load.return_value = mock_info
 
-        with (
-            patch(
-                "delegatron.plugins.entry_points",
-                return_value=[mock_ep],
-                create=True,
-            ),
-            patch("importlib.metadata.entry_points", return_value=[mock_ep]),
-        ):
+        with patch("importlib.metadata.entry_points", return_value=[mock_ep]):
             found = registry.discover()
 
         assert any(p.name == "ep-plugin" for p in found)
@@ -224,6 +218,12 @@ class TestPluginDiscoverEntryPoints:
 
 
 class TestPluginDiscoverLocal:
+    @pytest.fixture(autouse=True)
+    def _no_installed_plugins(self) -> Iterator[None]:
+        """Plugins of installed packages (entry points) must not leak into these tests."""
+        with patch("importlib.metadata.entry_points", return_value=[]):
+            yield
+
     def test_discover_local_py_module(self, registry: PluginRegistry, tmp_path: Path) -> None:
         plugin_file = tmp_path / "my_plugin.py"
         plugin_file.write_text(

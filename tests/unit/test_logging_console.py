@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 
 import pytest
 
@@ -39,14 +40,25 @@ class TestUnwritableLogDir:
     """An unwritable log directory leaves logging console-only instead of crashing."""
 
     @pytest.fixture(autouse=True)
-    def _isolated_logger(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        for name in ("delegatron", "uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"):
-            monkeypatch.setattr(logging.getLogger(name), "handlers", [])
+    def _isolated_logger(self, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+        # setup_logging / setup_server_logging also set the level and turn off
+        # propagation; restore those too, or later tests' caplog misses records.
+        loggers = [
+            logging.getLogger(name)
+            for name in ("delegatron", "uvicorn", "uvicorn.access", "uvicorn.error", "fastapi")
+        ]
+        levels = [logger.level for logger in loggers]
+        for logger in loggers:
+            monkeypatch.setattr(logger, "handlers", [])
+            monkeypatch.setattr(logger, "propagate", logger.propagate)
 
         def _deny(path: object) -> logging.Handler:
             raise PermissionError(13, "Permission denied", str(path))
 
         monkeypatch.setattr(log_utils, "_make_file_handler", _deny)
+        yield
+        for logger, level in zip(loggers, levels, strict=True):
+            logger.setLevel(level)  # setLevel also clears the loggers' level cache
 
     def test_cli_logging_starts_console_only(self, capsys: pytest.CaptureFixture[str]) -> None:
         # setup_logging replaces console handlers, so read the warning from stderr.

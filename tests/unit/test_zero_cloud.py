@@ -51,6 +51,7 @@ class TestIsLocalUrl:
             "http://172.32.0.1",
             "http://8.8.8.8",
             "http://localhost.example.com:11434",
+            "http://[::ffff:8.8.8.8]:11434",  # IPv4-mapped public address
         ],
     )
     def test_not_local(self, url: str) -> None:
@@ -69,10 +70,17 @@ class TestIsLocalUrl:
             "http://172.16.0.1",
             "http://0.0.0.0:8000",
             "localhost:11434/v1",
+            "http://[::ffff:127.0.0.1]:11434",  # IPv4-mapped loopback
         ],
     )
     def test_local(self, url: str) -> None:
         assert _is_local_url(url)
+
+    def test_link_local_metadata_address_counts_as_local(self) -> None:
+        # Current decision, pinned: every link-local address is local, including
+        # 169.254.169.254 (the cloud instance-metadata service, reachable only
+        # from the machine itself).  Change this test if that decision changes.
+        assert _is_local_url("http://169.254.169.254/latest/meta-data/")
 
     def test_allowlisted_fqdn_is_local(self) -> None:
         assert not is_local_host("gpu.lab.example.com")
@@ -187,6 +195,22 @@ class TestNetworkGuardCloudPreset:
         report = guard.finalize()
         assert report.cloud_free is False
         assert len(report.violations) == 1  # Only implementer is cloud
+
+    @pytest.mark.parametrize(
+        ("base_url", "host"),
+        [
+            ("https://api.together.xyz/v1", "api.together.xyz"),  # public endpoint
+            ("", "unknown"),  # no base_url: cannot be shown to be local
+        ],
+    )
+    def test_openai_compatible_off_the_lan_is_cloud(self, base_url: str, host: str) -> None:
+        guard = NetworkGuard(run_id="test-compat-001")
+        guard.record_llm_call(
+            role="implementer", provider="openai-compatible", base_url=base_url, model="m"
+        )
+        report = guard.finalize()
+        assert report.cloud_free is False
+        assert [(e.host, e.is_local) for e in report.events] == [(host, False)]
 
     def test_e2b_sandbox_is_cloud(self) -> None:
         guard = NetworkGuard(run_id="test-e2b-001")

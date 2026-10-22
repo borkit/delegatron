@@ -24,6 +24,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
+from itertools import pairwise
 from typing import Any
 
 from delegatron.security.patch_lines import AddedLines, added_lines, patch_files
@@ -203,10 +204,27 @@ def _label(name: str, pattern: str) -> str:
     return repr(pattern) if name == pattern else f"'{name}' ({pattern!r})"
 
 
+def _diff_source_paths(patch: Mapping[str, Any]) -> list[str]:
+    """The ``---`` paths of the unified diff: the files it changes, renames or deletes.
+
+    A deletion (``+++ /dev/null``) adds no lines, so its path is only here.
+    """
+    lines = str(patch.get("diff_unified") or "").splitlines()
+    paths: list[str] = []
+    for line, following in pairwise(lines):
+        # A "---" line is a file header only right before its "+++" line.
+        if line.startswith("--- ") and following.startswith("+++ "):
+            source = line[4:].split("\t", 1)[0].strip()
+            if source != "/dev/null":
+                paths.append(source[2:] if source.startswith("a/") else source)
+    return paths
+
+
 def _no_modify_violations(
     patch: Mapping[str, Any], lines: AddedLines, constraints: Constraints
 ) -> list[ConstraintViolation]:
-    deleted = [normalize_rel_path(p) for p in patch.get("delete_files") or []]
+    removed = [*(patch.get("delete_files") or []), *_diff_source_paths(patch)]
+    deleted = [normalize_rel_path(p) for p in removed]
     touched = dict.fromkeys([*lines, *(p for p in deleted if p)])
     violations: list[ConstraintViolation] = []
     for path in touched:
