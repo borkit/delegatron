@@ -1,0 +1,21 @@
+{
+  "name": "cli-tool-file-organizer",
+  "description": "Build a CLI tool that organizes files by type — tests the pipeline's ability to create a complete Click application with tests.",
+  "request": "Create a Python CLI tool using Click that organizes files in a directory by type. The tool should: (1) accept a source directory path as argument, (2) have a --dry-run flag that shows what would happen without moving files, (3) categorize files into folders: images/ (jpg, png, gif, svg), documents/ (pdf, doc, docx, txt, md), code/ (py, js, ts, go, rs), data/ (csv, json, yaml, xml), and other/ for everything else, (4) handle duplicate filenames by appending a number suffix, (5) print a summary of files moved per category. Include pytest tests covering all categories, dry-run mode, and duplicate handling.",
+  "expected_files": [
+    "src/organizer/cli.py",
+    "src/organizer/__init__.py",
+    "tests/test_cli.py",
+    "pyproject.toml"
+  ],
+  "acceptance_criteria": [
+    "CLI accepts a directory path argument",
+    "--dry-run flag shows planned moves without executing",
+    "Files are categorized into correct folders by extension",
+    "Duplicate filenames get numeric suffixes",
+    "Summary shows count per category",
+    "All tests pass with pytest"
+  ],
+  "max_iterations": 5,
+  "max_cost_usd": 2.0
+}

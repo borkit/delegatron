@@ -1,0 +1,14 @@
+{
+  "name": "powershell-module",
+  "description": "Create a PowerShell module with cmdlets, help, and Pester tests",
+  "request_pattern": "Create a PowerShell module named ${module_name} that ${module_purpose}. Include: module manifest (.psd1), script module (.psm1), exported cmdlets with proper Verb-Noun naming, comment-based help for each cmdlet, parameter validation, error handling with Write-Error, and Pester tests for all cmdlets.",
+  "variables": {
+    "module_name": "MyToolkit",
+    "module_purpose": "provides utility functions for Active Directory user management"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "mcr.microsoft.com/powershell:lts-nanoserver-ltsc2022"
+    }
+  }
+}

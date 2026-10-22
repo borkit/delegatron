@@ -1,0 +1,17 @@
+{
+  "name": "security-hardening",
+  "description": "Harden an existing application against common vulnerabilities",
+  "request_pattern": "Security-harden the existing codebase. Address: ${vulnerabilities}. Add input sanitization, parameterized queries, CSRF protection, rate limiting, and secure headers. Never store secrets in code. Add security-focused tests.",
+  "variables": {
+    "vulnerabilities": "SQL injection, XSS, CSRF, auth bypass, insecure direct object references"
+  },
+  "constraints": {
+    "forbidden_patterns": [
+      "re:\\beval\\(",
+      "re:\\bexec\\(",
+      "os.system(",
+      "shell=True",
+      "innerHTML"
+    ]
+  }
+}

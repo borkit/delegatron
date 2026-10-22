@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delegatron — Plan, build, test and review code on your own hardware</title>
+<meta name="description" content="Delegatron runs an architect, an implementer, a test sandbox and a reviewer in one loop to turn a plain-language request into tested, reviewed code — with local or cloud models. Open source by StoriaBrevi LLC.">
+<meta name="theme-color" content="#15181d">
+<meta name="robots" content="index, follow">
+<meta name="author" content="StoriaBrevi LLC">
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="canonical" href="https://delegatron.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Delegatron">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://delegatron.com/">
+<meta property="og:title" content="Delegatron — Plan, build, test and review code on your own hardware">
+<meta property="og:description" content="A multi-agent code pipeline that turns a request into tested, reviewed code with local or cloud models. Open source by StoriaBrevi LLC.">
+<meta property="og:image" content="https://delegatron.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Delegatron: Plan. Build. Test. Review. On your own hardware. Shown beside the dashboard's zero-cloud report.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Delegatron — Plan, build, test and review code on your own hardware">
+<meta name="twitter:description" content="A multi-agent code pipeline for local or cloud models. Open source by StoriaBrevi LLC.">
+<meta name="twitter:image" content="https://delegatron.com/assets/og.png">
+<meta name="twitter:image:alt" content="Delegatron: Plan. Build. Test. Review. On your own hardware.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Delegatron",
+  "description": "A multi-agent code pipeline that runs an architect, an implementer, a test sandbox and a reviewer in one loop to turn a plain-language request into tested, reviewed code, with local or cloud models.",
+  "url": "https://delegatron.com/",
+  "codeRepository": "https://github.com/borkit/delegatron",
+  "programmingLanguage": ["Python", "TypeScript"],
+  "runtimePlatform": "Python 3.11+",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "version": "0.3.0",
+  "dateCreated": "2026-04-03",
+  "author": { "@type": "Organization", "name": "StoriaBrevi LLC" },
+  "publisher": { "@type": "Organization", "name": "StoriaBrevi LLC" }
+}
+</script>
+<link rel="preload" href="/assets/fonts/InterTight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<main id="main">
+
+<!-- ── Hero ───────────────────────────────────────────────── -->
+<div class="frame frame-dark hero" id="top">
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="Delegatron home">
+      <img src="/assets/logo.svg" alt="" width="32" height="32"><span>Delegatron</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#story">Story</a>
+      <a href="#inside">Inside</a>
+      <a href="#limits">Limits</a>
+    </nav>
+    <a class="nav-cta" href="https://github.com/borkit/delegatron" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0C17.3 4.5 18.3 4.8 18.3 4.8c.6 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.1 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.2v3.3c0 .3.1.7.8.6A12 12 0 0 0 12 .3"/></svg>
+      <span>GitHub</span>
+    </a>
+  </header>
+
+  <div class="hero-copy">
+    <h1>Plan. Build. Test. Review.<br>On your own hardware.</h1>
+    <p>Delegatron turns a plain-language request into tested, reviewed code, using whichever models you choose &mdash; on your own GPU or in the cloud.</p>
+    <a class="pill" href="https://github.com/borkit/delegatron" rel="noopener">
+      <span>Read the source</span>
+      <i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></i>
+    </a>
+    <small>Open source &middot; AGPL-3.0 &middot; v0.3 &middot; published as-is</small>
+  </div>
+
+  <div class="hero-stage">
+    <div class="field" aria-hidden="true"></div>
+    <figure class="hero-shot">
+      <img src="/assets/shots/compliance.webp" width="2880" height="1800" fetchpriority="high"
+           alt="Delegatron dashboard: a zero-cloud report showing five events, all to localhost, none to the cloud.">
+    </figure>
+  </div>
+
+  <div class="hero-cards">
+    <div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h7M6 8.5v7M18 8.5v7M8.5 18h7"/></svg>
+      <h2>Any model, any role</h2>
+      <p>Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint such as Ollama.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 10 3 2-3 2M12 15h5"/></svg>
+      <h2>Tested before it's trusted</h2>
+      <p>Every patch runs in a Docker sandbox before a reviewer looks at it.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2.5"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <h2>Stays on your machine</h2>
+      <p>Each run records every network destination it touched.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Statement ──────────────────────────────────────────── -->
+<section class="frame frame-soft statement" aria-label="What Delegatron does">
+  <p>Ask one AI model to write code and it will tell you the code works.
+    Delegatron makes models <span class="c-green">check each other's work<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg></span>
+    before you ever see it.</p>
+  <p>One model plans, another writes, a sandbox runs the tests and a third reviews &mdash;
+    <span class="c-amber">around again until it passes<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg></span>
+    or the budget runs out.</p>
+  <p class="dim">All of it can run on a single 12&nbsp;GB graphics card,
+    <span class="c-blue">with nothing leaving the building<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2.5"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>.</p>
+</section>
+
+<!-- ── Features ───────────────────────────────────────────── -->
+<section class="wrap" id="features">
+  <div class="section-head">
+    <h2>Four roles, one loop,<br>clear rules.</h2>
+    <p>The agents never chat with each other. They hand over checked documents &mdash; a plan, a patch, a test report, a review &mdash; and only the orchestrator touches your repository or runs code.</p>
+  </div>
+
+  <div class="bento">
+    <article class="card span-7">
+      <div class="viz viz-roles" aria-hidden="true">
+        <div class="role"><span class="role-name">Architect</span><span class="select">phi4 <b>14B</b></span><span class="tag tag-local">local</span></div>
+        <div class="role"><span class="role-name">Implementer</span><span class="select">qwen2.5-coder <b>14B</b></span><span class="tag tag-local">local</span></div>
+        <div class="role"><span class="role-name">Reviewer</span><span class="select">phi4 <b>14B</b></span><span class="tag tag-local">local</span></div>
+        <div class="role ghost"><span class="role-name">Director</span><span class="select">architect's model</span><span class="tag">on conflict</span></div>
+      </div>
+      <h3>A model for every role</h3>
+      <p>Mix and match per role. The <code>local</code> preset above fits on one 12&nbsp;GB GPU; swap in Claude, GPT or Gemini wherever you like.</p>
+    </article>
+
+    <article class="card span-5">
+      <div class="viz viz-budget" aria-hidden="true">
+        <div class="meter"><span>Iterations</span><b>2 / 5</b><i style="--v:40%"></i></div>
+        <div class="meter"><span>Cost</span><b>$0.0049 / $5.00</b><i style="--v:3%"></i></div>
+        <div class="meter"><span>Wall time</span><b>4 / 60 min</b><i style="--v:7%"></i></div>
+      </div>
+      <h3>Hard limits, always on</h3>
+      <p>Iterations, spend and time are capped by the orchestrator, not left to the model.</p>
+    </article>
+
+    <article class="card card-dark span-5">
+      <div class="viz viz-iters" aria-hidden="true">
+        <div class="it"><b class="dot ok"></b>#1<span class="chip ok">6 passed</span><span class="chip ok">approved</span><em>$0.0027</em></div>
+        <div class="it"><b class="dot bad"></b>#2<span class="chip bad">2 failed</span><span class="chip">rejected</span><em>$0.0039</em></div>
+        <div class="it"><b class="dot ok"></b>#3<span class="chip ok">2 passed</span><span class="chip ok">approved</span><em>$0.0048</em></div>
+        <div class="it fade"><b class="dot bad"></b>#4<span class="chip bad">7 failed</span><span class="chip">rejected</span><em>$0.0069</em></div>
+      </div>
+      <h3>Every iteration on the record</h3>
+      <p>Tests, verdicts and cost for every pass, saved to disk so a run can be resumed or retried.</p>
+    </article>
+
+    <article class="card span-7">
+      <div class="viz viz-term" aria-hidden="true">
+        <div><span class="p">$</span>delegatron run --preset local "add a /health endpoint"</div>
+        <div><span class="p">$</span>delegatron review --focus security</div>
+        <div><span class="p">$</span>delegatron retry 6f29441bbe8c</div>
+        <div><span class="p">$</span>delegatron serve <span class="m"># REST API + dashboard</span></div>
+      </div>
+      <h3>CLI, API or dashboard</h3>
+      <p>The same pipeline from a terminal, a REST API with live event streams, or a web dashboard. Each run works on its own git branch.</p>
+    </article>
+
+    <article class="card span-6">
+      <div class="viz viz-sec" aria-hidden="true">
+        <div class="alert"><b>Blocked</b><span>Possible AWS key in <code>config.py:12</code></span><code class="hl">AKIAIOSFODNN7EXAMPLE</code></div>
+        <div class="alert warn"><b>Flagged</b><span>New third-party import <code>requests</code></span></div>
+      </div>
+      <h3>Security checks on every patch</h3>
+      <p>Leaked secrets, new dependencies and imports that won't resolve are caught before a patch is accepted.</p>
+    </article>
+
+    <article class="card span-6">
+      <div class="viz viz-ladder" aria-hidden="true">
+        <div><span>1</span>Failing tests</div>
+        <div><span>2</span>Security checks</div>
+        <div><span>3</span>Reviewer blockers</div>
+        <div><span>4</span>Opinions</div>
+      </div>
+      <h3>Evidence settles arguments</h3>
+      <p>When agents disagree, the stronger evidence wins. If the same disagreement keeps coming back, a director makes one binding call.</p>
+    </article>
+  </div>
+
+  <ul class="trio">
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><div><h3>Six languages</h3><p>Python, JS/TS, Go, Rust, Java and PHP, each tested end to end in its own image.</p></div></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg><div><h3>Thirty templates</h3><p>REST APIs, CLI tools, audits and test suites, with variables filled in at launch.</p></div></li>
+    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><div><h3>4,150+ tests</h3><p>Strict type checking and a test suite that covers the orchestrator end to end.</p></div></li>
+  </ul>
+</section>
+
+<!-- ── Story ──────────────────────────────────────────────── -->
+<section class="wrap" id="story">
+  <div class="story">
+    <h2>Why it exists, and why it's open.</h2>
+    <div class="story-body">
+      <p>Delegatron started in April 2026 with one question: <strong>could ordinary local models &mdash; the kind that fit on a single gaming GPU &mdash; write code you could actually rely on, if they had to check each other's work?</strong></p>
+      <p>A single model asked to write code will cheerfully say it's done. So Delegatron splits the job the way a small team would. An architect writes the plan and the acceptance criteria. An implementer writes the code. A sandbox runs the tests &mdash; the one opinion nobody can argue with. A reviewer reads the change and the evidence, then decides. When something fails, the loop goes around again with a clean slate and the failure in hand.</p>
+      <p>Most of it was built in one intense month by a single developer at StoriaBrevi, much of it pair-programmed with an AI coding assistant &mdash; which felt right for a tool about delegating work to AI. It was revisited in the autumn to bring it up to date with newer models.</p>
+      <p>It began as a possible product. In the end we decided it's more useful as an open, readable example of how a careful multi-agent pipeline fits together: the state machine, the evidence rules, the sandboxing and the budget limits. <strong>So it's published under the AGPL-3.0</strong> &mdash; anyone can read it, run it and learn from it, and anything built on it as a network service has to stay open too.</p>
+      <div class="facts">
+        <div><b>Apr 2026</b><span>first commit</span></div>
+        <div><b>393</b><span>commits</span></div>
+        <div><b>40k</b><span>lines of Python</span></div>
+        <div><b>4,150+</b><span>automated tests</span></div>
+        <div><b>1</b><span>developer</span></div>
+        <div><b>12 GB</b><span>GPU it was tuned on</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Inside ─────────────────────────────────────────────── -->
+<section class="frame frame-dark inside" id="inside">
+  <div class="inside-head">
+    <h2>See exactly<br>what happened.</h2>
+    <p>The dashboard streams each run live. Every plan, patch, test report and review is kept, so nothing is a black box.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Dashboard screens">
+    <button class="tab" role="tab" id="t-run" aria-controls="p-run" aria-selected="true">Run detail</button>
+    <button class="tab" role="tab" id="t-new" aria-controls="p-new" aria-selected="false" tabindex="-1">New run</button>
+    <button class="tab" role="tab" id="t-tpl" aria-controls="p-tpl" aria-selected="false" tabindex="-1">Templates</button>
+    <button class="tab" role="tab" id="t-cmp" aria-controls="p-cmp" aria-selected="false" tabindex="-1">Zero-cloud report</button>
+  </div>
+  <div class="stage">
+    <div class="field field-2" aria-hidden="true"></div>
+    <figure role="tabpanel" id="p-run" aria-labelledby="t-run"><img src="/assets/shots/run-detail.webp" width="2880" height="1800" loading="lazy" alt="Run detail: seven iterations with test results, review verdicts and cost per iteration."></figure>
+    <figure role="tabpanel" id="p-new" aria-labelledby="t-new" hidden><img src="/assets/shots/new-run.webp" width="2880" height="1800" loading="lazy" alt="New run form with local and cloud model presets."></figure>
+    <figure role="tabpanel" id="p-tpl" aria-labelledby="t-tpl" hidden><img src="/assets/shots/templates.webp" width="2880" height="1800" loading="lazy" alt="Template library with categories and variables."></figure>
+    <figure role="tabpanel" id="p-cmp" aria-labelledby="t-cmp" hidden><img src="/assets/shots/compliance.webp" width="2880" height="1800" loading="lazy" alt="Zero-cloud report listing every network destination a run used."></figure>
+  </div>
+  <p class="caption">Screens from a real run on local models &mdash; phi4 and qwen2.5-coder 14B with a Docker sandbox. That run stalled after seven iterations, and the dashboard shows exactly why.</p>
+</section>
+
+<!-- ── Limits ─────────────────────────────────────────────── -->
+<section class="wrap" id="limits">
+  <div class="section-head">
+    <h2>What it's good at,<br>and what it isn't.</h2>
+    <p>Numbers from recorded runs. Local costs are electricity and hardware wear, estimated from GPU power draw.</p>
+  </div>
+
+  <div class="table-card" style="margin-top:64px" tabindex="0" role="region" aria-label="Recorded end-to-end runs">
+    <table>
+      <caption>Recorded end-to-end runs</caption>
+      <thead><tr><th>Task</th><th>Models</th><th>Result</th><th class="num">Cost</th></tr></thead>
+      <tbody>
+        <tr><td>FastAPI CRUD service with SQLite</td><td>Claude Sonnet</td><td><span class="ok">13/13 tests, approved</span></td><td class="num">$0.10</td></tr>
+        <tr><td>Express API with Jest</td><td>Claude Sonnet</td><td><span class="ok">12/12 tests, approved</span></td><td class="num">$0.08</td></tr>
+        <tr><td>React counter with Vitest</td><td>Local</td><td><span class="ok">2/2 tests, approved</span></td><td class="num">$0.0062</td></tr>
+        <tr><td>Rust library</td><td>Local</td><td><span class="ok">4/4 tests, approved</span></td><td class="num">$0.0054</td></tr>
+        <tr><td>Three-module project</td><td>Local</td><td><span class="ok">12/12 tests, approved</span></td><td class="num">$0.0057</td></tr>
+        <tr><td>Chess engine with GUI</td><td>Claude Sonnet</td><td><span class="meh">stalled at 40/41</span></td><td class="num">$0.43</td></tr>
+        <tr><td>Real GitHub issues (SWE-bench)</td><td>Local</td><td><span class="meh">0 of 11 resolved</span></td><td class="num">&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lists">
+    <div class="list-card can">
+      <h3>It can</h3>
+      <ul>
+        <li>Write <strong>new</strong> modules, services, CLI tools and their tests from a description</li>
+        <li>Run entirely on local models through Ollama, on cloud APIs, or a mix per role</li>
+        <li>Test every patch in Docker for six languages</li>
+        <li>Review an existing repository or log files, read-only</li>
+        <li>Split a larger project into milestones and run them in order</li>
+        <li>Resume, retry or refine a run, and open a GitHub pull request when one is approved</li>
+      </ul>
+    </div>
+    <div class="list-card dark cant">
+      <h3>It can't</h3>
+      <ul>
+        <li>Reliably fix bugs in large existing codebases &mdash; tools with long exploration loops are better at that</li>
+        <li>Explore open-endedly; it works in a few short iterations per task by design</li>
+        <li>Guarantee that generated code is correct or secure &mdash; <strong>a person still has to review it</strong></li>
+        <li>Isolate code safely without Docker or E2B; its local mode runs code directly on your machine</li>
+        <li>Be used as a hosted service &mdash; there isn't one</li>
+      </ul>
+    </div>
+    <div class="list-card use">
+      <h3>Good for</h3>
+      <ul>
+        <li>Prototypes, hackathon scaffolding and boilerplate</li>
+        <li>Generating a test suite for code you already have</li>
+        <li>Comparing models on the same task with the built-in benchmark</li>
+        <li>Experiments on networks where code can't leave the building</li>
+        <li>Learning how a multi-agent pipeline is put together</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="stack">
+    <h3>Built with</h3>
+    <ul>
+      <li><img src="/assets/logos/python.svg" alt="" width="20" height="20">Python</li>
+      <li><img src="/assets/logos/fastapi.svg" alt="" width="20" height="20">FastAPI</li>
+      <li><img src="/assets/logos/pydantic.svg" alt="" width="20" height="20">Pydantic</li>
+      <li><img src="/assets/logos/sqlite.svg" alt="" width="20" height="20">SQLite</li>
+      <li><img src="/assets/logos/docker.svg" alt="" width="20" height="20">Docker</li>
+      <li><img src="/assets/logos/nextdotjs.svg" alt="" width="20" height="20">Next.js</li>
+      <li><img src="/assets/logos/react.svg" alt="" width="20" height="20">React</li>
+      <li><img src="/assets/logos/typescript.svg" alt="" width="20" height="20">TypeScript</li>
+      <li><img src="/assets/logos/tailwindcss.svg" alt="" width="20" height="20">Tailwind</li>
+      <li><img src="/assets/logos/ollama.svg" alt="" width="20" height="20">Ollama</li>
+      <li><img src="/assets/logos/anthropic.svg" alt="" width="20" height="20">Anthropic</li>
+      <li><img src="/assets/logos/openai.svg" alt="" width="20" height="20">OpenAI</li>
+      <li><img src="/assets/logos/googlegemini.svg" alt="" width="20" height="20">Gemini</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<!-- ── Status + footer ────────────────────────────────────── -->
+<section class="frame frame-dark status" aria-labelledby="status-h">
+  <div>
+    <h2 id="status-h">Finished, and shared<br>as it stands.</h2>
+    <p>Delegatron is a completed portfolio project by StoriaBrevi LLC. The code is published as-is for anyone to read and run on their own. There's no service, support, roadmap or promise of updates behind it.</p>
+  </div>
+  <dl>
+    <div><dt>Status</dt><dd>v0.3 &mdash; complete, not maintained</dd></div>
+    <div><dt>License</dt><dd>GNU AGPL-3.0, no warranty</dd></div>
+    <div><dt>Support</dt><dd>None, including installation help</dd></div>
+    <div><dt>Contributions</dt><dd>Issues and pull requests are not accepted</dd></div>
+  </dl>
+  <footer>
+    <span>&copy; 2026 StoriaBrevi LLC. Not affiliated with Anthropic, OpenAI, Google or Ollama.</span>
+    <span class="foot-links">
+      <a href="https://github.com/borkit/delegatron" rel="noopener">Source</a>
+      <a href="/terms">Terms of use</a>
+      <a href="/notices">License &amp; notices</a>
+      <span>No cookies, no tracking</span>
+    </span>
+  </footer>
+</section>
+
+<script src="/assets/site.js" defer></script>
+</body>
+</html>

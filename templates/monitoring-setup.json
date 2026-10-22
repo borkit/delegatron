@@ -1,0 +1,9 @@
+{
+  "name": "monitoring-setup",
+  "description": "Add application monitoring, logging, and alerting",
+  "request_pattern": "Add monitoring and observability to the application. Include: structured logging with ${log_format}, health check endpoint, Prometheus metrics (request count, latency, error rate), ${tracing} distributed tracing, and a Grafana dashboard JSON template.",
+  "variables": {
+    "log_format": "JSON (structured)",
+    "tracing": "OpenTelemetry"
+  }
+}

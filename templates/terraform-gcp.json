@@ -1,0 +1,15 @@
+{
+  "name": "terraform-gcp",
+  "description": "Create Terraform infrastructure for Google Cloud deployment",
+  "request_pattern": "Create Terraform configuration for GCP. Deploy: ${resources}. Include: VPC network, firewall rules, service accounts with least privilege, GCS backend for state, variables.tf, outputs.tf, and a README. Use ${gcp_region} region.",
+  "variables": {
+    "resources": "Cloud Run service with Cloud SQL PostgreSQL and Cloud Storage bucket",
+    "gcp_region": "us-central1"
+  },
+  "constraints": {
+    "guidelines": [
+      "Never hardcode credentials",
+      "Never commit a service account key in plaintext"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dotnet-api",
+  "description": "Create a .NET Web API with Entity Framework and Swagger",
+  "request_pattern": "Create a .NET ${dotnet_version} Web API for ${domain}. Include: controllers with CRUD endpoints, Entity Framework Core with ${database} provider, DTOs with FluentValidation, Swagger/OpenAPI documentation, dependency injection, structured logging with Serilog, and xUnit tests.",
+  "variables": {
+    "dotnet_version": "9.0",
+    "domain": "inventory management (products, categories, stock levels)",
+    "database": "SQL Server"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "mcr.microsoft.com/dotnet/sdk:9.0"
+    }
+  }
+}

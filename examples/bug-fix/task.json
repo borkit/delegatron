@@ -1,0 +1,19 @@
+{
+  "name": "bug-fix-pagination",
+  "description": "Fix a pagination bug in an existing API — tests the pipeline's ability to read, understand, and fix existing code.",
+  "request": "Fix the pagination bug in the /api/items endpoint. The endpoint currently returns all items regardless of the page and per_page query parameters. The offset calculation is wrong — it uses `offset = page * per_page` but should use `offset = (page - 1) * per_page` since pages are 1-indexed. Also add a total_pages field to the response. The endpoint is in src/api/items.py and tests are in tests/test_items.py. Fix the bug and update tests to cover: page 1 returns first N items, page 2 returns next N items, last page returns remaining items, page beyond total returns empty list, total_pages is correct.",
+  "expected_files": [
+    "src/api/items.py",
+    "tests/test_items.py"
+  ],
+  "acceptance_criteria": [
+    "Offset calculation uses (page - 1) * per_page",
+    "Response includes total_pages field",
+    "Page 1 returns correct first page of items",
+    "Page beyond total returns empty list",
+    "total_pages equals ceil(total_items / per_page)",
+    "All tests pass"
+  ],
+  "max_iterations": 3,
+  "max_cost_usd": 1.0
+}

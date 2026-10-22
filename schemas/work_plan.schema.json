@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkPlan",
+  "type": "object",
+  "required": ["summary", "tasks", "acceptance", "termination"],
+  "properties": {
+    "summary": { "type": "string" },
+    "assumptions": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "open_questions": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "title", "description", "outputs", "risk_level"],
+        "properties": {
+          "task_id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "outputs": { "type": "array", "items": { "type": "string" } },
+          "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+          "depends_on": { "type": "array", "items": { "type": "string" }, "default": [] }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["criteria", "tests"],
+      "properties": {
+        "criteria": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "termination": {
+      "type": "object",
+      "required": ["done_when"],
+      "properties": {
+        "done_when": { "type": "array", "items": { "type": "string" } },
+        "stop_limits": {
+          "type": "object",
+          "properties": {
+            "max_iterations": { "type": "integer", "minimum": 1, "default": 5 },
+            "max_cost_usd": { "type": "number", "minimum": 0, "default": 5.0 },
+            "max_wall_time_minutes": { "type": "integer", "minimum": 1, "default": 30 }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ArbitrationReport",
+  "type": "object",
+  "properties": {
+    "resolutions": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["title", "decision"],
+        "properties": {
+          "title": { "type": "string" },
+          "decision": { "type": "string", "enum": ["ACCEPT", "REVISE", "DEFER"] },
+          "reasoning": { "type": "string", "default": "" },
+          "alternative": { "type": "string", "default": "" },
+          "fix_target": { "type": ["string", "null"], "enum": ["code", "test", "architecture", null], "default": null },
+          "fix_file": { "type": ["string", "null"], "default": null }
+        }
+      }
+    }
+  }
+}

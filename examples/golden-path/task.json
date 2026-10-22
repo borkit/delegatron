@@ -1,0 +1,27 @@
+{
+  "name": "golden-path-health-api",
+  "description": "Golden path integration test: create a minimal FastAPI app with /health and /users CRUD endpoints backed by SQLite.",
+  "request": "Create a FastAPI application with: (1) a GET /health endpoint that returns {\"status\": \"ok\", \"uptime_seconds\": <float>}, (2) CRUD endpoints for /users (GET list, GET by id, POST create, PUT update, DELETE) using SQLite with aiosqlite, (3) Pydantic models for request/response validation, (4) pytest tests for all endpoints using httpx AsyncClient.",
+  "expected_files": [
+    "src/app/main.py",
+    "src/app/models.py",
+    "src/app/database.py",
+    "src/app/routers/health.py",
+    "src/app/routers/users.py",
+    "tests/test_health.py",
+    "tests/test_users.py",
+    "requirements.txt"
+  ],
+  "acceptance_criteria": [
+    "GET /health returns 200 with status and uptime_seconds fields",
+    "POST /users creates a user and returns 201",
+    "GET /users returns a list of all users",
+    "GET /users/{id} returns a single user or 404",
+    "PUT /users/{id} updates a user or returns 404",
+    "DELETE /users/{id} deletes a user or returns 404",
+    "All endpoints validate input with Pydantic",
+    "All tests pass with pytest"
+  ],
+  "max_iterations": 5,
+  "max_cost_usd": 2.0
+}

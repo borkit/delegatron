@@ -1,0 +1,24 @@
+{
+  "name": "ruleset-clean-code",
+  "description": "Clean code ruleset — enforce code quality standards",
+  "request_pattern": "Apply clean code rules during this review/run.",
+  "constraints": {
+    "forbidden_patterns": [
+      "except:",
+      "except Exception:",
+      "pass  # TODO",
+      "# FIXME",
+      "# HACK",
+      "# XXX",
+      "import *",
+      "type: ignore",
+      "sleep(",
+      "time.sleep("
+    ],
+    "guidelines": [
+      "Functions should have a single responsibility",
+      "All public functions must have docstrings",
+      "Error handling must be explicit, not bare except"
+    ]
+  }
+}

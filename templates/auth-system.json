@@ -1,0 +1,17 @@
+{
+  "name": "auth-system",
+  "description": "Add authentication with JWT tokens, password hashing, and role-based access",
+  "request_pattern": "Add ${auth_type} authentication to the application. Include user registration, login, token refresh, and logout. Hash passwords with bcrypt. Add role-based access control with roles: ${roles}. Protect all endpoints except registration and login. Include tests.",
+  "variables": {
+    "auth_type": "JWT",
+    "roles": "admin, user, viewer"
+  },
+  "constraints": {
+    "guidelines": [
+      "Password must be hashed",
+      "Tokens must have expiration",
+      "Never store passwords in plain text",
+      "Never hardcode secrets"
+    ]
+  }
+}

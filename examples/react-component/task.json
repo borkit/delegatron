@@ -1,0 +1,24 @@
+{
+  "name": "react-data-table",
+  "description": "Build a reusable React data table component — tests the pipeline with JavaScript/TypeScript projects.",
+  "request": "Create a reusable React TypeScript component called DataTable that: (1) accepts a generic typed array of data and column definitions as props, (2) supports sorting by clicking column headers (ascending/descending toggle), (3) supports client-side search/filter across all text columns, (4) shows a loading skeleton when data is undefined, (5) shows an empty state message when data is an empty array, (6) uses CSS modules for styling (no external CSS framework). Include Jest tests covering: rendering with data, sorting by column click, filtering by search input, loading state, and empty state.",
+  "expected_files": [
+    "src/components/DataTable/DataTable.tsx",
+    "src/components/DataTable/DataTable.module.css",
+    "src/components/DataTable/index.ts",
+    "src/__tests__/DataTable.test.tsx"
+  ],
+  "acceptance_criteria": [
+    "Component renders rows from typed data array",
+    "Clicking column header sorts data ascending then descending",
+    "Search input filters rows across all text columns",
+    "Loading skeleton shown when data is undefined",
+    "Empty state shown when data is empty array",
+    "CSS modules used for all styling",
+    "TypeScript types are generic (works with any data shape)",
+    "All tests pass with Jest"
+  ],
+  "max_iterations": 5,
+  "max_cost_usd": 3.0,
+  "docker_image": "node:22-slim"
+}

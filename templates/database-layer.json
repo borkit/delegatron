@@ -1,0 +1,10 @@
+{
+  "name": "database-layer",
+  "description": "Add database models, migrations, and CRUD operations",
+  "request_pattern": "Add a ${db_type} database layer for ${models}. Include model definitions, a repository/DAO pattern for CRUD operations, connection pooling, and migration scripts. Use ${orm} as the ORM. Add tests with an in-memory/test database.",
+  "variables": {
+    "db_type": "PostgreSQL",
+    "models": "users, posts, comments",
+    "orm": "SQLAlchemy"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "data-pipeline",
+  "description": "Create an ETL/data processing pipeline",
+  "request_pattern": "Create a data pipeline that ${pipeline_purpose}. Include: ${source} data source connector, transformation steps with validation, ${destination} output, error handling with dead letter queue, retry logic, progress logging, and tests with sample data fixtures.",
+  "variables": {
+    "pipeline_purpose": "ingests CSV files, validates and transforms records, loads into a database",
+    "source": "CSV/file system",
+    "destination": "PostgreSQL"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "windows-service",
+  "description": "Create a Windows service with install/uninstall and event logging",
+  "request_pattern": "Create a Windows service in ${language} that ${service_purpose}. Include: service installer/uninstaller, start/stop/pause handlers, Windows Event Log integration, configuration via app.config or registry, error recovery settings, and a health check endpoint. Add unit tests.",
+  "variables": {
+    "language": "C#/.NET",
+    "service_purpose": "monitors a directory for new files and processes them"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "mcr.microsoft.com/dotnet/sdk:9.0-nanoserver-ltsc2022"
+    }
+  }
+}

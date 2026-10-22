@@ -1,0 +1,14 @@
+{
+  "name": "refactor-cleanup",
+  "description": "Refactor and clean up existing code without changing behavior",
+  "request_pattern": "Refactor the existing codebase. Focus on: ${focus}. Do NOT change any external behavior — all existing tests must still pass. Improve code readability, reduce duplication, and follow ${style} conventions.",
+  "variables": {
+    "focus": "extract helper functions, reduce nesting, improve naming, remove dead code",
+    "style": "PEP 8 / clean code"
+  },
+  "constraints": {
+    "guidelines": [
+      "All existing tests must pass"
+    ]
+  }
+}

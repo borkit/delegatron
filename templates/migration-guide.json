@@ -1,0 +1,9 @@
+{
+  "name": "migration-guide",
+  "description": "Migrate codebase from one framework/language/version to another",
+  "request_pattern": "Migrate the codebase from ${from_stack} to ${to_stack}. Preserve all existing functionality and tests. Update import paths, configuration, and dependencies. Create a migration checklist in MIGRATION.md.",
+  "variables": {
+    "from_stack": "Flask",
+    "to_stack": "FastAPI with async/await"
+  }
+}

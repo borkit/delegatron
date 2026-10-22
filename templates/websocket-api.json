@@ -1,0 +1,8 @@
+{
+  "name": "websocket-api",
+  "description": "Add WebSocket support for real-time communication",
+  "request_pattern": "Add WebSocket support for ${use_case}. Include: connection manager with room/channel support, authentication on connect, heartbeat/ping-pong, graceful disconnect handling, message schema validation, and tests using a WebSocket test client.",
+  "variables": {
+    "use_case": "real-time chat with typing indicators and read receipts"
+  }
+}

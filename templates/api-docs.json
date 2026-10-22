@@ -1,0 +1,6 @@
+{
+  "name": "api-docs",
+  "description": "Generate API documentation and OpenAPI schema",
+  "request_pattern": "Add comprehensive API documentation. Generate an OpenAPI/Swagger schema, add docstrings to all endpoints, create a README section for API usage with curl examples, and add request/response examples for each endpoint.",
+  "variables": {}
+}

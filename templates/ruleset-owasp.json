@@ -1,0 +1,29 @@
+{
+  "name": "ruleset-owasp",
+  "description": "OWASP Top 10 security ruleset — apply to any review or run",
+  "request_pattern": "Apply OWASP Top 10 security rules during this review/run.",
+  "constraints": {
+    "forbidden_patterns": [
+      "re:\\beval\\(",
+      "re:\\bexec\\(",
+      "os.system(",
+      "shell=True",
+      "innerHTML",
+      "document.write(",
+      "re:(?i)SELECT.*WHERE.*['\"]\\s*\\+",
+      "re:format\\(.*user_input",
+      "pickle.loads(",
+      "re:yaml\\.load\\(.*Loader=None",
+      "secret_key = \"",
+      "verify=False",
+      "check_hostname=False"
+    ],
+    "guidelines": [
+      "All user input must be validated and sanitized",
+      "Use parameterized queries for all database operations",
+      "Authentication tokens must have expiration",
+      "Sensitive data must be encrypted at rest and in transit",
+      "Never hardcode passwords"
+    ]
+  }
+}

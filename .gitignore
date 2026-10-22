@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Delegatron runtime
+/runs/
+/reviews/
+artifacts/
+*.log
+data/
+delegatron-review.zip
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Dashboard build output
+dashboard/out/
+
+# Pipeline run workspaces
+.delegatron-runs/
+_sandbox/
+chess-workspace/
+golden-path-workspace/
+swebench-runs/
+swebench-workdir/
+
+benchmark-workspace/
+
+# Benchmark/validation outputs (regenerable)
+/swebench-runs-*/
+/swebench-workdir-*/
+/validation-results/
+/benchmark-workspace/
+
+# Benchmark scratch (2026-04-18)
+_bench_2026_04_18/

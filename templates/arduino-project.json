@@ -1,0 +1,13 @@
+{
+  "name": "arduino-project",
+  "description": "Create an Arduino/embedded project with sensor integration",
+  "request_pattern": "Create an Arduino project that ${project_purpose}. Include: main sketch (.ino), sensor library wrappers, serial debug output, LED status indicators, power-saving sleep mode, and a README with wiring diagram (text-based) and parts list.",
+  "variables": {
+    "project_purpose": "reads temperature and humidity from a DHT22 sensor and displays on an OLED screen"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "arduino/arduino-cli:latest"
+    }
+  }
+}

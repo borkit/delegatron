@@ -1,0 +1,19 @@
+{
+  "name": "rest-api",
+  "description": "Create a REST API with CRUD endpoints, input validation, and tests",
+  "request_pattern": "Create a REST API for ${resource} with full CRUD endpoints (GET list, GET by ID, POST create, PUT update, DELETE). Use ${framework} with Pydantic validation. Include error handling (404, 422) and pytest tests for all endpoints.",
+  "variables": {
+    "resource": "users",
+    "framework": "FastAPI"
+  },
+  "constraints": {
+    "forbidden_patterns": [
+      "re:\\beval\\(",
+      "re:\\bexec\\("
+    ],
+    "guidelines": [
+      "All endpoints must validate input",
+      "Include error handling for 404 and 422"
+    ]
+  }
+}

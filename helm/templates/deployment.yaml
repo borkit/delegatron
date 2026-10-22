@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-delegatron
+  labels:
+    app: delegatron
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: delegatron
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: delegatron
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: delegatron
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: anthropic-api-key
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+                  optional: true
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: gemini-api-key
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  DELEGATRON_MAX_ITERATIONS: {{ .Values.config.maxIterations | quote }}
+  DELEGATRON_MAX_COST_USD: {{ .Values.config.maxCostUsd | quote }}
+  DELEGATRON_MAX_WALL_TIME: {{ .Values.config.maxWallTime | quote }}
+  DELEGATRON_SANDBOX: {{ .Values.config.sandbox | quote }}
+  DELEGATRON_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-secrets
+type: Opaque
+data:
+  {{- if .Values.secrets.anthropicApiKey }}
+  anthropic-api-key: {{ .Values.secrets.anthropicApiKey | b64enc | quote }}
+  {{- end }}
+  {{- if .Values.secrets.openaiApiKey }}
+  openai-api-key: {{ .Values.secrets.openaiApiKey | b64enc | quote }}
+  {{- end }}
+  {{- if .Values.secrets.geminiApiKey }}
+  gemini-api-key: {{ .Values.secrets.geminiApiKey | b64enc | quote }}
+  {{- end }}

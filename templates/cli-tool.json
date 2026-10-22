@@ -1,0 +1,10 @@
+{
+  "name": "cli-tool",
+  "description": "Create a command-line tool with subcommands and rich output",
+  "request_pattern": "Create a CLI tool named ${tool_name} that ${tool_purpose}. Use ${cli_framework} with subcommands, rich help text, colored output, progress bars for long operations, JSON output mode (--json), and a config file (~/.${tool_name}.toml). Add tests for each subcommand.",
+  "variables": {
+    "tool_name": "mytool",
+    "tool_purpose": "manages deployment environments and configurations",
+    "cli_framework": "Click + Rich"
+  }
+}

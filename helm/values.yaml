@@ -1,0 +1,44 @@
+# Keep at 1: the server holds active runs, SSE streams and plan approvals in
+# memory and executes one run at a time.
+replicaCount: 1
+
+# No image is published: build one from the repository's Dockerfile and push it
+# to your registry, then set repository/tag.
+image:
+  repository: delegatron
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# Rendered into the <release>-config ConfigMap as DELEGATRON_* variables.
+config:
+  maxIterations: "5"
+  maxCostUsd: "5.00"
+  maxWallTime: "60"
+  # The image has no Docker CLI and this chart mounts no Docker socket, so the
+  # docker sandbox cannot start containers in the pod; e2b needs E2B_API_KEY
+  # (not wired by this chart) and an image built with EXTRAS=cloud-providers,e2b.
+  sandbox: docker
+  logLevel: INFO
+
+secrets:
+  # Provide these via --set or a values file; the chart renders them into the
+  # <release>-secrets Secret.
+  anthropicApiKey: ""
+  openaiApiKey: ""
+  geminiApiKey: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

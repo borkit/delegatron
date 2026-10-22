@@ -1,0 +1,14 @@
+{
+  "name": "windows-wpf-app",
+  "description": "Create a WPF desktop application with MVVM pattern",
+  "request_pattern": "Create a WPF desktop application in C# that ${app_purpose}. Use MVVM pattern with: ViewModels, data binding, ICommand implementation, INotifyPropertyChanged. Include a main window with ${ui_elements}. Add a settings page, proper error handling with user-friendly messages, and unit tests for ViewModels.",
+  "variables": {
+    "app_purpose": "manages a task list with categories and due dates",
+    "ui_elements": "navigation panel, data grid, detail view, status bar"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "mcr.microsoft.com/dotnet/sdk:9.0-nanoserver-ltsc2022"
+    }
+  }
+}

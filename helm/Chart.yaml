@@ -1,0 +1,10 @@
+apiVersion: v2
+name: delegatron
+description: Autonomous multi-agent coding pipeline
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+maintainers:
+  - name: StoriaBrevi LLC
+    email: info@storiabrevi.com
+    url: https://delegatron.com

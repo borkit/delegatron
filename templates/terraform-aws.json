@@ -1,0 +1,20 @@
+{
+  "name": "terraform-aws",
+  "description": "Create Terraform infrastructure for AWS deployment",
+  "request_pattern": "Create Terraform configuration for AWS. Deploy: ${resources}. Include: VPC with public/private subnets, security groups, IAM roles with least privilege, S3 backend for state, variables.tf with sensible defaults, outputs.tf, and a README with deployment instructions. Use ${aws_region} region.",
+  "variables": {
+    "resources": "ECS Fargate service with ALB, RDS PostgreSQL, and S3 bucket",
+    "aws_region": "us-east-1"
+  },
+  "constraints": {
+    "forbidden_patterns": [
+      "re:access_key\\s*=\\s*\"",
+      "re:secret_key\\s*=\\s*\""
+    ],
+    "guidelines": [
+      "Use variables for all configurable values",
+      "Include terraform.tfvars.example",
+      "Never hardcode AWS credentials"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "test-suite",
+  "description": "Generate comprehensive tests for existing code",
+  "request_pattern": "Write comprehensive tests for the existing codebase. Focus on: ${focus_areas}. Target ${coverage}% code coverage. Include unit tests, edge cases, error scenarios, and integration tests where applicable. Use ${test_framework}.",
+  "variables": {
+    "focus_areas": "core business logic, API endpoints, error handling",
+    "coverage": "90",
+    "test_framework": "pytest"
+  }
+}

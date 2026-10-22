@@ -1,0 +1,6 @@
+{
+  "name": "review-security",
+  "description": "Security-focused read-only code review (uses review endpoint)",
+  "request_pattern": "REVIEW_MODE: security\n\nPerform a security audit of this codebase. Check for: OWASP Top 10, hardcoded secrets, injection vulnerabilities, authentication/authorization flaws, insecure dependencies, and data exposure risks.",
+  "variables": {}
+}

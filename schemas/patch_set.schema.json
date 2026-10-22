@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PatchSet",
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": { "type": "string", "enum": ["ok", "blocked"] },
+    "files": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {},
+      "description": "Full file contents keyed by relative path (primary output format)"
+    },
+    "edits": {
+      "type": "array",
+      "default": [],
+      "description": "Search/replace edits of existing files; search must occur exactly count times",
+      "items": {
+        "type": "object",
+        "required": ["path", "search"],
+        "properties": {
+          "path": { "type": "string" },
+          "search": { "type": "string", "minLength": 1 },
+          "replace": { "type": "string", "default": "" },
+          "count": { "type": "integer", "minimum": 1, "default": 1 }
+        }
+      }
+    },
+    "delete_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Relative paths of files to delete"
+    },
+    "diff_unified": { "type": "string", "default": "" },
+    "rationale": { "type": "string", "default": "" },
+    "tests_added_or_updated": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "tests_to_run": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "questions": { "type": "array", "items": { "type": "string" }, "default": [] }
+  }
+}

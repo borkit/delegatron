@@ -1,0 +1,19 @@
+{
+  "name": "terraform-azure",
+  "description": "Create Terraform infrastructure for Azure deployment",
+  "request_pattern": "Create Terraform configuration for Azure. Deploy: ${resources}. Include: resource group, virtual network with subnets, network security groups, managed identity, Azure Key Vault for secrets, variables.tf, outputs.tf, and a README. Use ${azure_region} region.",
+  "variables": {
+    "resources": "App Service with Azure SQL Database, Azure Cache for Redis, and Storage Account",
+    "azure_region": "eastus"
+  },
+  "constraints": {
+    "forbidden_patterns": [
+      "re:client_secret\\s*=\\s*\""
+    ],
+    "guidelines": [
+      "Use managed identity where possible",
+      "Store secrets in Key Vault",
+      "Never hardcode credentials"
+    ]
+  }
+}

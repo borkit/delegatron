@@ -1,0 +1,10 @@
+{
+  "name": "kubernetes-deploy",
+  "description": "Create Kubernetes manifests for application deployment",
+  "request_pattern": "Create Kubernetes deployment manifests for ${app_name}. Include: Deployment with ${replicas} replicas, Service (ClusterIP + LoadBalancer), ConfigMap, Secret (template), HPA for autoscaling, PodDisruptionBudget, health/readiness probes, resource limits, and a Kustomize base. Target namespace: ${namespace}.",
+  "variables": {
+    "app_name": "my-api",
+    "replicas": "3",
+    "namespace": "production"
+  }
+}

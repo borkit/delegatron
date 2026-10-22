@@ -1,0 +1,9 @@
+{
+  "name": "ci-pipeline",
+  "description": "Add CI/CD pipeline configuration",
+  "request_pattern": "Add a ${ci_platform} CI/CD pipeline. Include: lint check, type check, unit tests, integration tests, build step, and ${deploy_target} deployment. Add caching for dependencies. Fail fast on lint/type errors.",
+  "variables": {
+    "ci_platform": "GitHub Actions",
+    "deploy_target": "Docker registry push"
+  }
+}

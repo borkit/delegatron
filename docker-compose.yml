@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  delegatron-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        EXTRAS: ${DELEGATRON_EXTRAS:-cloud-providers}
+    ports:
+      - "8000:8000"
+    # Bind mounts must be writable by uid 1000 (the image's user): create them
+    # first (`mkdir -p workspace runs data`) or set `user: "${UID}:${GID}"`.
+    volumes:
+      - ./workspace:/app/workspace
+      - ./runs:/app/runs
+      - ./data:/app/data
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - E2B_API_KEY=${E2B_API_KEY:-}
+      - DELEGATRON_MAX_ITERATIONS=${DELEGATRON_MAX_ITERATIONS:-5}
+      - DELEGATRON_MAX_COST_USD=${DELEGATRON_MAX_COST_USD:-5.00}
+      - DELEGATRON_MAX_WALL_TIME=${DELEGATRON_MAX_WALL_TIME:-60}
+      # The image has no Docker CLI: use e2b, or see docs/deployment.md for the
+      # Docker-socket setup the default docker sandbox needs.
+      - DELEGATRON_SANDBOX=${DELEGATRON_SANDBOX:-docker}
+      - DELEGATRON_LOG_LEVEL=${DELEGATRON_LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

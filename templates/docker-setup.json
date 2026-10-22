@@ -1,0 +1,8 @@
+{
+  "name": "docker-setup",
+  "description": "Add Docker configuration for containerized deployment",
+  "request_pattern": "Add Docker support to the project. Create a Dockerfile with multi-stage build (builder + runtime), a docker-compose.yml for local development with ${services}, a .dockerignore file, and health check endpoint. Optimize for small image size.",
+  "variables": {
+    "services": "app, database, redis"
+  }
+}

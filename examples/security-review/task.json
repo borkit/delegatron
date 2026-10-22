@@ -1,0 +1,15 @@
+{
+  "name": "security-review-flask-app",
+  "description": "Run a security-focused code review on a Flask application — tests the read-only review pipeline.",
+  "request": "Review this Flask application for security vulnerabilities. Focus on: SQL injection, XSS, CSRF, authentication bypass, insecure session handling, hardcoded secrets, missing input validation, and insecure file uploads. For each issue found, provide the severity (blocker/major/minor), affected file and line, a description of the vulnerability, and a recommended fix with code example.",
+  "review_mode": true,
+  "focus": "security",
+  "acceptance_criteria": [
+    "Identifies SQL injection vulnerabilities",
+    "Flags hardcoded secrets or API keys",
+    "Detects missing input validation",
+    "Provides severity rating for each issue",
+    "Includes file and line references",
+    "Recommends specific fixes with code examples"
+  ]
+}

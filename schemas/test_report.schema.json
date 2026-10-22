@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TestReport",
+  "type": "object",
+  "required": ["passed", "total", "failures"],
+  "properties": {
+    "passed": { "type": "boolean" },
+    "total": { "type": "integer", "minimum": 0 },
+    "failures": { "type": "integer", "minimum": 0 },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed"],
+        "properties": {
+          "name": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "default": "",
+            "description": "pytest outcome: passed, failed, error, skipped, xfailed or xpassed"
+          },
+          "duration_ms": { "type": "number" },
+          "output": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "stdout": { "type": "string" },
+    "stderr": { "type": "string" },
+    "duration_ms": { "type": "number" },
+    "failed_tests": {
+      "type": "array",
+      "default": [],
+      "items": { "type": "string" }
+    },
+    "failure_excerpt": { "type": "string", "default": "" },
+    "flaky_tests": {
+      "type": "array",
+      "default": [],
+      "items": { "type": "string" }
+    },
+    "entrypoint_runs": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["file"],
+        "properties": {
+          "file": { "type": "string" },
+          "returncode": { "type": ["integer", "null"], "default": null },
+          "timed_out": { "type": "boolean", "default": false },
+          "stdout_head": { "type": "string", "default": "" },
+          "stderr_tail": { "type": "string", "default": "" }
+        }
+      }
+    },
+    "targeted": {
+      "type": ["object", "null"],
+      "default": null,
+      "required": ["passed"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "failing_ids": { "type": "array", "default": [], "items": { "type": "string" } },
+        "stdout_tail": { "type": "string", "default": "" }
+      }
+    },
+    "lint_warnings": {
+      "type": "array",
+      "default": [],
+      "items": { "type": "string" }
+    },
+    "output_truncated": {
+      "type": "boolean",
+      "default": false,
+      "description": "stdout or stderr was cut to its size limit"
+    },
+    "rerun_attempts": { "type": "integer", "minimum": 0, "default": 0 },
+    "rerun_skipped": {
+      "type": "string",
+      "default": "",
+      "enum": ["", "disabled", "no_ids", "not_pytest", "too_many", "unsafe_id", "windows_image"],
+      "description": "why the failing tests of a failed run were not rerun for flakiness"
+    },
+    "skipped_reason": { "type": "string", "default": "" },
+    "synthetic_tests": {
+      "type": "boolean",
+      "default": false,
+      "description": "only the orchestrator's smoke tests ran"
+    },
+    "raw_passed": {
+      "type": ["boolean", "null"],
+      "default": null,
+      "description": "the run's real result when passed_with_flaky tolerated its failures"
+    },
+    "passed_with_flaky": {
+      "type": "boolean",
+      "default": false,
+      "description": "a failed run counted as passed: every failure was a pre-existing flake"
+    }
+  }
+}

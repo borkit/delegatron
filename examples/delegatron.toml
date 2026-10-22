@@ -1,0 +1,125 @@
+# Delegatron Project Configuration
+# Place this file in your project root to customize behavior per-project.
+# `delegatron run --workspace <dir>` reads <dir>/delegatron.toml, then
+# ./delegatron.toml; `--config <path>` names the file explicitly. A repository
+# cloned from a git URL is never read implicitly (only through --config).
+# Precedence: CLI flags > this file > --preset > DELEGATRON_* env vars > defaults.
+
+# --- Role Configuration ---
+# Assign any provider/model to any role. Supported providers:
+# anthropic, openai, google, openai-compatible (and mock, for testing).
+# anthropic and google need the cloud-providers extra (pip install -e ".[cloud-providers]").
+# The director (arbitration) runs on the architect's provider and model.
+# With --preset, a role table here is merged over the preset's role key by key;
+# changing provider or base_url drops the preset's endpoint keys (base_url,
+# api_key, api_key_env, prompt_version).
+
+[roles.architect]
+provider = "anthropic"
+model = "claude-sonnet-5-5"
+# api_key_env = "ANTHROPIC_API_KEY"     # defaults per provider (sent only to that provider's API)
+# base_url = ""                          # override for custom endpoints
+# max_tokens = 16384                    # response token limit
+# temperature = 0.0                     # honored: sent with every call this role makes (0-2)
+# prompt_version = 0                    # 0/omitted = auto: v1 for cloud endpoints, v5 for local ones
+# timeout_seconds = 600                 # per request; local endpoints default to 900
+# context_window = 0                    # tokens; 0 = auto (detected for local Ollama endpoints)
+
+[roles.implementer]
+provider = "openai"
+model = "gpt-4.1"
+
+[roles.reviewer]
+provider = "google"
+model = "gemini-2.5-pro"
+
+# --- Examples: Alternative Configurations ---
+# openai-compatible endpoints get no default API key: name it with api_key_env.
+
+# Use Ollama locally (no key; local endpoints get v5 prompts and a 900 s timeout):
+# [roles.implementer]
+# provider = "openai-compatible"
+# model = "llama4-maverick"
+# base_url = "http://localhost:11434/v1"
+
+# Use Grok:
+# [roles.reviewer]
+# provider = "openai-compatible"
+# model = "grok-3"
+# base_url = "https://api.x.ai/v1"
+# api_key_env = "XAI_API_KEY"
+
+# Use GitHub Copilot:
+# [roles.implementer]
+# provider = "openai-compatible"
+# model = "claude-sonnet-4"
+# base_url = "https://api.githubcopilot.com"
+# api_key_env = "GITHUB_TOKEN"
+
+# --- Pipeline Settings ---
+
+[pipeline]
+max_iterations = 5                       # per task
+max_cost_usd = 5.0                       # 0 = no limit
+max_wall_time_minutes = 60
+sandbox = "docker"                       # "docker", "e2b" or "local" ("none" = "local")
+# docker_image = "python:3.12-slim"     # Custom Docker image override
+# docker_image = "node:22-slim"         # For Node.js projects
+# docker_image = "mcr.microsoft.com/dotnet/sdk:9.0-nanoserver-ltsc2022"  # Windows .NET
+# docker_image = "mcr.microsoft.com/windows/servercore:ltsc2022"         # Windows native
+log_level = "INFO"
+interactive = false                      # true = approve the architect's plan before coding starts
+security_mode = "warn"                   # "allow", "warn" or "block" (block: patches with blocker/major findings are rejected)
+# parallel_tasks = false                 # generate ready tasks' first patches concurrently (git only)
+# enable_arbitration = true              # the director rules on recurring implementer/reviewer conflicts
+# emcs_threshold = 0.8                   # EMCS score that may override a rejection with only minor
+                                         # issues and passing tests (local presets: 0.6)
+# create_pr = false                      # open a GitHub PR when every task is approved
+# pr_base = "main"                       # base branch for that PR
+# pr_draft = false                       # open the PR as a draft
+# flaky_rerun = true                     # rerun failing pytest ids to spot flaky tests
+# flaky_reruns = 2                       # reruns of the still-failing tests (at most 5)
+# tolerate_flaky_tests = false           # pass a run whose only failures are pre-existing tests
+                                         # that passed on a rerun (alias: tolerate_preexisting_flaky)
+# baseline_tests = true                  # run the tests once before the first patch; what fails
+                                         # then is pre-existing (env: DELEGATRON_BASELINE_TESTS)
+# max_replans = 2                        # re-plans before architecture issues go to the implementer
+# run_git_hooks = false                  # run the repository's git hooks on Delegatron's commits
+# local_hosts = ["gpu.lab.example.com"]  # extra host names the zero-cloud report counts as local
+# run_entrypoints = true                 # smoke-run the task's scripts after the tests
+                                         # (default: on for docker/e2b, off for the local sandbox)
+# retry_temperature = 0.4                # implementer temperature for retries that would repeat
+                                         # the previous attempt (used when higher than the role's)
+
+# --- Security Scanners ---
+
+[security]
+# Regexes for lines the secrets scanner must not report (e.g. test fixtures)
+secrets_allowlist = []
+
+# --- Constraints ---
+# Rules the agents must follow. Pattern entries are literal text; prefix an
+# entry with "re:" to make it a regular expression (an invalid one fails at load
+# time). A [pipeline.constraints] table is also read; its keys win over these.
+
+[constraints]
+# Files/directories agents should never modify (gitignore-style patterns)
+no_modify = [
+    "alembic/versions/",
+    "config/production.py",
+    ".env",
+]
+# Text that must appear in at least one changed source file of every patch
+# required_patterns = ["re:from __future__ import annotations"]
+# Text that must NOT appear in added lines
+forbidden_patterns = [
+    "os.system(",
+    "eval(",
+    "exec(",
+    "re:#\\s*(TODO|FIXME)",
+]
+# Prose rules shown to the agents; never pattern-checked
+guidelines = [
+    "All endpoints must validate input with Pydantic models",
+    "All database operations must use async SQLAlchemy",
+]

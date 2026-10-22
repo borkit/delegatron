@@ -1,0 +1,9 @@
+{
+  "name": "microservice",
+  "description": "Create a production-ready microservice scaffold",
+  "request_pattern": "Create a ${language} microservice for ${service_purpose}. Include: HTTP API, health/readiness probes, graceful shutdown, structured logging, configuration from environment variables, Dockerfile, docker-compose for local dev with dependencies, and comprehensive tests.",
+  "variables": {
+    "language": "Python/FastAPI",
+    "service_purpose": "user notification service (email + push)"
+  }
+}

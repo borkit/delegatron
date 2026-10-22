@@ -1,0 +1,13 @@
+{
+  "name": "powershell-automation",
+  "description": "Create PowerShell automation scripts for IT operations",
+  "request_pattern": "Create PowerShell automation scripts for: ${task_description}. Include: parameter validation, error handling with try/catch, transcript logging, progress bars for long operations, credential handling via Get-Credential (never hardcode), idempotent operations where possible, and a README with usage examples.",
+  "variables": {
+    "task_description": "automated server health checks across multiple machines with HTML report output"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "mcr.microsoft.com/powershell:lts-nanoserver-ltsc2022"
+    }
+  }
+}

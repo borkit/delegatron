@@ -1,0 +1,8 @@
+{
+  "name": "bug-fix",
+  "description": "Diagnose and fix a reported bug with regression tests",
+  "request_pattern": "Bug report: ${bug_description}\n\nDiagnose the root cause, implement a fix, and add a regression test that would have caught this bug. Do not change unrelated code. Explain the root cause in the patch rationale.",
+  "variables": {
+    "bug_description": "Describe the bug here: what happens, what should happen, steps to reproduce"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "react-component",
+  "description": "Create React/Next.js components with TypeScript",
+  "request_pattern": "Create a React component for ${component_purpose}. Use TypeScript, ${styling} for styling. Include: props interface, loading/error/empty states, responsive design, accessibility (ARIA labels, keyboard nav), and ${test_framework} tests.",
+  "variables": {
+    "component_purpose": "a data table with sorting, filtering, pagination, and row selection",
+    "styling": "Tailwind CSS",
+    "test_framework": "React Testing Library"
+  },
+  "overrides": {
+    "pipeline": {
+      "docker_image": "node:22-slim"
+    }
+  }
+}

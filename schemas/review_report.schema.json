@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReviewReport",
+  "type": "object",
+  "required": ["summary", "acceptance_met"],
+  "properties": {
+    "summary": { "type": "string" },
+    "acceptance_met": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["severity", "title", "details", "recommended_fix"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["blocker", "major", "minor", "nit"] },
+          "title": { "type": "string" },
+          "details": { "type": "string" },
+          "recommended_fix": { "type": "string" },
+          "evidence": { "type": "string", "default": "" },
+          "fix_target": {
+            "type": ["string", "null"],
+            "enum": ["code", "test", "architecture", null],
+            "default": null
+          },
+          "fix_file": { "type": ["string", "null"], "default": null }
+        }
+      }
+    }
+  }
+}
