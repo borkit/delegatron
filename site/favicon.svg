@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Delegatron</title>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#040806"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="15.5" stroke="#2bd576" stroke-opacity=".35"/>
+  <path d="M20 22a10 10 0 0 1 10-6h4a10 10 0 0 1 10 6M44 42a10 10 0 0 1-10 6h-4a10 10 0 0 1-10-6M42 20a10 10 0 0 1 6 10v4a10 10 0 0 1-6 10M22 44a10 10 0 0 1-6-10v-4a10 10 0 0 1 6-10" stroke="#2bd576" stroke-width="2.5" stroke-linecap="round" stroke-opacity=".55"/>
+  <circle cx="20" cy="20" r="5" fill="#2bd576"/>
+  <circle cx="44" cy="20" r="5" fill="#38d9c4"/>
+  <circle cx="44" cy="44" r="5" fill="#2bd576"/>
+  <circle cx="20" cy="44" r="5" fill="#38d9c4"/>
+  <circle cx="32" cy="32" r="4" fill="#ecf5ef"/>
+</svg>
