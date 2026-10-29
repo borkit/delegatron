@@ -1,33 +1,46 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>License &amp; notices — Delegatron</title>
-<meta name="description" content="Delegatron's AGPL-3.0 license and the third-party software, fonts and marks used by the project and this website.">
-<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Delegatron">
-<meta property="og:url" content="https://delegatron.com/notices">
-<meta property="og:title" content="License &amp; notices — Delegatron">
-<meta property="og:image" content="https://delegatron.com/assets/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="https://delegatron.com/notices">
-<link rel="stylesheet" href="/assets/site.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>License &amp; notices · Delegatron</title>
+  <meta name="description" content="The Delegatron license (AGPL-3.0), what it means in practice, and notices for third-party software used by Delegatron and this website.">
+  <meta name="theme-color" content="#040806">
+  <link rel="canonical" href="https://delegatron.com/notices">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Delegatron">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://delegatron.com/notices">
+  <meta property="og:title" content="License &amp; notices · Delegatron">
+  <meta property="og:description" content="The Delegatron license (AGPL-3.0), what it means in practice, and notices for third-party software used by Delegatron and this website.">
+  <meta property="og:image" content="https://delegatron.com/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Delegatron: plan, build, test, review. Four glowing nodes circling a loop over a green grid.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://delegatron.com/og.jpg">
+  <link rel="stylesheet" href="/css/site.css">
 </head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="nav on-light">
-  <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="32" height="32"><span>Delegatron</span></a>
-  <nav class="nav-links" aria-label="Pages"><a href="/">Home</a><a href="/terms">Terms</a><a href="/notices" aria-current="page">Notices</a></nav>
-  <a class="nav-cta" href="https://github.com/borkit/delegatron" rel="noopener"><span>GitHub</span></a>
-</header>
+<body class="page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="/" aria-label="Delegatron home">
+      <img src="/favicon.svg" alt="" width="28" height="28">
+      <span>Delegatron</span>
+    </a>
+    <nav class="links" aria-label="Pages">
+      <a href="/">Home</a>
+      <a href="/terms">Terms</a>
+      <a href="/notices" aria-current="page">Notices</a>
+    </nav>
+    <a class="btn btn-small" href="https://github.com/borkit/delegatron" rel="noopener">GitHub</a>
+  </header>
 
-<main class="legal" id="main">
+  <main class="legal" id="main">
   <h1>License &amp; notices</h1>
-  <p class="meta">Last updated 22 October 2026</p>
+  <p class="meta">Last updated 29 October 2026</p>
 
   <h2>Delegatron license</h2>
   <p>Copyright &copy; 2026 StoriaBrevi LLC.</p>
@@ -48,26 +61,32 @@
   <p>Delegatron depends on open-source libraries including FastAPI, Pydantic, Click, Rich, HTTPX, Uvicorn, GitPython, the OpenAI, Anthropic and Google SDKs, Next.js, React and Tailwind CSS. Each is used under its own license (mostly MIT, BSD and Apache 2.0). The direct dependencies and their licenses are listed in <a href="https://github.com/borkit/delegatron/blob/main/THIRD_PARTY_LICENSES.md" rel="noopener">THIRD_PARTY_LICENSES.md</a>. Those projects are not affiliated with Delegatron.</p>
 
   <h2>AI models</h2>
-  <p>No model weights are included with Delegatron. Local models such as phi4 and qwen2.5-coder are downloaded separately, typically through Ollama, under their own licenses. Cloud models are used through each provider's API under that provider's terms.</p>
+  <p>No model weights are included with Delegatron. Local models are downloaded separately, under their own licenses. Cloud models are used through each provider's API under that provider's terms.</p>
 
   <h2>This website</h2>
+  <div class="table-wrap">
   <table>
     <thead><tr><th>Asset</th><th>Source</th><th>License</th></tr></thead>
     <tbody>
-      <tr><td>Inter, Inter Tight</td><td>The Inter Project Authors</td><td>SIL Open Font License 1.1 &mdash; <a href="/assets/fonts/OFL-Inter.txt">Inter</a>, <a href="/assets/fonts/OFL-InterTight.txt">Inter Tight</a></td></tr>
-      <tr><td>JetBrains Mono</td><td>The JetBrains Mono Project Authors</td><td>SIL Open Font License 1.1 &mdash; <a href="/assets/fonts/OFL-JetBrainsMono.txt">text</a></td></tr>
-      <tr><td>Technology logos</td><td><a href="https://simpleicons.org" rel="noopener">Simple Icons</a></td><td>CC0 1.0 for the icon files; the marks themselves are trademarks of their owners</td></tr>
+      <tr><td>three.js 0.160.0 (3D scene)</td><td>three.js authors</td><td>MIT &mdash; <a href="/vendor/three/LICENSE">text</a></td></tr>
       <tr><td>Screenshots, logo, text</td><td>StoriaBrevi LLC</td><td>&copy; 2026 StoriaBrevi LLC, all rights reserved</td></tr>
     </tbody>
   </table>
+  </div>
 
   <h2>Trademarks</h2>
   <p>Python, FastAPI, Pydantic, SQLite, Docker, Next.js, React, TypeScript, Tailwind CSS, Ollama, Anthropic, Claude, OpenAI, GPT, Google and Gemini are trademarks or registered trademarks of their respective owners. They're mentioned only to describe what Delegatron is built with or can connect to. No endorsement or affiliation is implied.</p>
 </main>
 
-<footer class="page-foot">
-  <span>&copy; 2026 StoriaBrevi LLC</span>
-  <span><a href="/">Home</a><a href="/terms">Terms of use</a><a href="/notices">License &amp; notices</a></span>
-</footer>
+  <footer class="foot">
+    <span>© 2026 StoriaBrevi LLC</span>
+    <span class="foot-links">
+      <a href="/terms">Terms of use</a>
+      <a href="/notices">License &amp; notices</a>
+      <span>No cookies, anonymous analytics only</span>
+    </span>
+  </footer>
+  <!-- Cloudflare Web Analytics: cookieless page counts; allowed in _headers. -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "f6fb4958f23945eab245bde4592da582"}'></script>
 </body>
 </html>

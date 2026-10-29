@@ -25,9 +25,9 @@
 
 <table>
   <tr>
-    <td width="33%" valign="top"><img src="site/assets/shots/run-detail.webp" alt="Run detail page with seven iterations, their test results, review verdicts and cost."><br><b>Every iteration on the record</b><br><sub>Tests, review verdict and cost for each pass. Resume, retry or download the code.</sub></td>
-    <td width="33%" valign="top"><img src="site/assets/shots/new-run.webp" alt="New run form with local and cloud model presets."><br><b>Pick a model trio</b><br><sub>Local presets that fit one 12&nbsp;GB GPU, cloud presets, or your own mix.</sub></td>
-    <td width="33%" valign="top"><img src="site/assets/shots/templates.webp" alt="Template library with categories and variables."><br><b>Thirty templates</b><br><sub>REST APIs, CLI tools, audits and test suites, with variables filled in at launch.</sub></td>
+    <td width="33%" valign="top"><img src="docs/assets/shots/run-detail.webp" alt="Run detail page with seven iterations, their test results, review verdicts and cost."><br><b>Every iteration on the record</b><br><sub>Tests, review verdict and cost for each pass. Resume, retry or download the code.</sub></td>
+    <td width="33%" valign="top"><img src="docs/assets/shots/new-run.webp" alt="New run form with local and cloud model presets."><br><b>Pick a model trio</b><br><sub>Local presets that fit one 12&nbsp;GB GPU, cloud presets, or your own mix.</sub></td>
+    <td width="33%" valign="top"><img src="docs/assets/shots/templates.webp" alt="Template library with categories and variables."><br><b>Thirty templates</b><br><sub>REST APIs, CLI tools, audits and test suites, with variables filled in at launch.</sub></td>
   </tr>
 </table>
 
@@ -406,6 +406,27 @@ ruff format src/ tests/
 | Slow response | A model that does not fit in VRAM spills to system RAM and runs ~3× slower per token: 30B models need 24 GB+ VRAM; 14B need ~9 GB; 8B models are faster |
 | Prompt cut off / model ignores instructions | Ollama's default 4096-token window is small; see [Context window](docs/install.md#context-window-ollama_context_length--num_ctx) |
 | "The Docker sandbox needs the docker CLI" | Install Docker, or run with `--sandbox local` (no isolation) or `--sandbox e2b` |
+
+## Website
+
+`site/` holds the delegatron.com landing page: plain HTML, CSS and JavaScript with no build
+step. The 3D scene uses Three.js 0.160.0, copied into `site/vendor/three/` so the page loads
+nothing from other sites. The screenshots in `site/media/` come from a real run, with model
+names and internal identifiers painted out. Preview it with:
+
+```bash
+python -m http.server 8000 --directory site
+```
+
+That server doesn't send `site/_headers`, pretty URLs (`/terms`) or the 404 page, which
+Cloudflare Pages adds in production.
+
+The site is hosted on Cloudflare Pages, connected to this repository: no build command,
+`site` as the output directory, and a build watch path of `site/*`, so pushing a change
+under `site/` to `main` deploys it and other commits don't. `site/_headers` sets the
+security headers. Its Content-Security-Policy allows inline scripts only because Cloudflare
+Bot Fight Mode injects one per request, and allows `cloudflareinsights.com` for Cloudflare
+Web Analytics. `www.delegatron.com` redirects to the apex with a Cloudflare Redirect Rule.
 
 ## License
 
