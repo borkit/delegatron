@@ -399,8 +399,11 @@ class BaseAgent(ABC):
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
+            # asyncio.timeout, not wait_for: on Python 3.11 wait_for drops a pending
+            # cancellation when the call has already finished (CPython gh-86296).
             try:
-                return await asyncio.wait_for(call, self._call_deadline)
+                async with asyncio.timeout(self._call_deadline):
+                    return await call
             except TimeoutError:
                 raise self._deadline_error() from None
 
@@ -411,7 +414,8 @@ class BaseAgent(ABC):
         items = aiter(stream)
         while True:
             try:
-                item = await asyncio.wait_for(anext(items), self._call_deadline)
+                async with asyncio.timeout(self._call_deadline):
+                    item = await anext(items)
             except StopAsyncIteration:
                 return
             except TimeoutError:

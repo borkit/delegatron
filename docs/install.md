@@ -167,7 +167,7 @@ For production dashboard deployment, see [deployment.md](deployment.md).
 | `local-phi4` | phi4:14b (local) | phi4:14b (local) | phi4:14b (local) | Free, fastest single-model |
 | `local-oss` | phi4:14b (local) | gpt-oss:20b (local) | phi4:14b (local) | Free, best local quality (validated 2026-04-18); 13 GB model, modest CPU offload on 12 GB cards |
 | `local-oss-review` | phi4:14b (local) | qwen2.5-coder:14b (local) | gpt-oss:20b (local) | Free, strongest local review (~2× reviewer latency) |
-| `local-heavy` | phi4:14b (local) | qwen3-coder:30b (local) | phi4:14b (local) | **⚠️ Requires 24 GB+ VRAM.** Spills 30+ GB to system RAM on smaller cards, 3× slower per token, exhausts iteration budget on complex tasks. |
+| `local-heavy` | phi4:14b (local) | qwen3-coder:30b (local) | phi4:14b (local) | **⚠️ Requires 24 GB+ VRAM.** Spills to system RAM on smaller cards, much slower per token (about 10 tok/s on a 12 GB card), exhausts iteration budget on complex tasks. |
 | `single-claude` | Claude Sonnet (Anthropic) | Claude Sonnet (Anthropic) | Claude Sonnet (Anthropic) | Single-agent cloud |
 | `single-gpt` | GPT-4.1 (OpenAI) | GPT-4.1 (OpenAI) | GPT-4.1 (OpenAI) | Single-agent cloud |
 | `mock` | Mock | Mock | Mock | No API keys needed |

@@ -36,6 +36,8 @@
 ## Project status
 
 Delegatron is published by [StoriaBrevi LLC](https://storiabrevi.com) as a **portfolio showcase**.
+It began as an education in getting AI models to check each other's work; it never became a
+product and never made money, and it's published with its failures included.
 The code is provided as-is under the [GNU Affero General Public License v3.0](LICENSE), with no
 warranty. There is **no support and no installation help**, and **issues and pull requests are
 not accepted**. See [delegatron.com](https://delegatron.com) for more about the project.
@@ -165,7 +167,7 @@ cd dashboard && npm install && npm run dev
 | `local-phi4` | Phi-4:14b in all roles | Fits in 12 GB VRAM. Fastest local, simple tasks. |
 | `local-oss` | Phi-4:14b + gpt-oss:20b + Phi-4:14b | Best local quality (validated 2026-04-18). 13 GB model: fits 12 GB VRAM with modest CPU offload. |
 | `local-oss-review` | Phi-4:14b + Qwen2.5-Coder:14b + gpt-oss:20b | Strongest local review, at ~2× reviewer latency. |
-| `local-heavy` | Phi-4:14b + Qwen3-Coder:30b + Phi-4:14b | **⚠️ Requires 24 GB+ VRAM.** On smaller cards, 30+ GB spills to system RAM, 3× slower per token, exhausts iteration budget on complex tasks. Only useful on cards that can hold the full 45 GB weights. |
+| `local-heavy` | Phi-4:14b + Qwen3-Coder:30b + Phi-4:14b | **⚠️ Requires 24 GB+ VRAM.** On smaller cards it spills to system RAM, runs much slower per token (about 10 tok/s on a 12 GB card), and exhausts the iteration budget on complex tasks. Only useful on cards that can hold the whole model. |
 | `single-claude` | All Claude Sonnet | Baseline (cloud) |
 | `single-gpt` | All GPT-4.1 | Baseline (cloud) |
 | `mock` | Mock providers | Testing (no API keys) |
@@ -403,7 +405,7 @@ ruff format src/ tests/
 | "Model not found" | Run `ollama pull <model-name>` |
 | "Out of memory" | Close other apps; the 14B models of `local` fit in 12 GB VRAM, 30B models (`local-heavy`) need 24 GB+ |
 | Invalid JSON from model | Normal with local models -- Delegatron retries automatically |
-| Slow response | A model that does not fit in VRAM spills to system RAM and runs ~3× slower per token: 30B models need 24 GB+ VRAM; 14B need ~9 GB; 8B models are faster |
+| Slow response | A model that does not fit in VRAM spills to system RAM and runs several times slower per token: 30B models need 24 GB+ VRAM; 14B need ~9 GB; 8B models are faster |
 | Prompt cut off / model ignores instructions | Ollama's default 4096-token window is small; see [Context window](docs/install.md#context-window-ollama_context_length--num_ctx) |
 | "The Docker sandbox needs the docker CLI" | Install Docker, or run with `--sandbox local` (no isolation) or `--sandbox e2b` |
 

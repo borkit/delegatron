@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    # Site- and docs-only changes don't touch the package; skip the run.
+    paths-ignore:
+      - "site/**"
+      - "docs/**"
+      - "**/*.md"
 
 permissions:
   contents: read

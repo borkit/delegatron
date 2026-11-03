@@ -111,8 +111,8 @@ PRESETS: dict[str, dict[str, dict[str, str | int | float]]] = {
     #                        (~2x reviewer latency for tougher critique).
     #   "local-phi4"       = phi4:14b all roles      — fastest, simple tasks.
     #   "local-heavy"      = qwen3-coder:30b impl    — REQUIRES 24 GB+ VRAM.
-    #                        Works on smaller cards but spills 30+ GB into
-    #                        system RAM, 3x slower per token, and complex
+    #                        Works on smaller cards but spills into system
+    #                        RAM, much slower per token, and complex
     #                        multi-feature tasks exhaust the iteration budget.
     "local": {
         "architect": {

@@ -33,7 +33,7 @@ description; it returns a working repo with tests.
 
 ### Delegatron is NOT Aider / Cursor / Copilot / OpenHands
 
-- **SWE-bench: 0/11 resolutions** across 4 local models (Apr 16 validation)
+- **SWE-bench: 0 resolutions** across 4 local models (0/10 in the Apr 16 validation, plus one more failed instance in [swebench-results.md](swebench-results.md))
 - Published: Qwen3-Coder 30B scores 50.3% on SWE-bench Verified — **with
   OpenHands' 100-turn agentic scaffolding**. Delegatron's few-iteration
   architect/implement/review loop (5 iterations by default) cannot match that.
@@ -68,7 +68,7 @@ when you want to override.
 | Task | Result | Cost | Iterations |
 |---|---|---|---|
 | FastAPI CRUD + sqlite3 + tests | **APPROVED 13/13** | $0.10 | 1 |
-| Node.js Express + Jest | **APPROVED 12/12** | $0.08 | 1 |
+| Node.js project | **APPROVED 12/12** | $0.08 | 1 |
 | Chess engine + GUI | Stalled 40/41 | $0.43 | 3 |
 
 Cloud presets reliably produce working code for standard backend tasks.
@@ -95,7 +95,8 @@ See [architect-plan-test.md](architect-plan-test.md) for details.
 | Fibonacci + pytest | `local` | **APPROVED 5/5** | $0.0030 | 2 |
 | Stack class + pytest | `local` | **APPROVED 5/5** | $0.0047 | 2 |
 | React Counter + Vitest | `local` | **APPROVED 2/2** | $0.0062 | 3 |
-| Multi-milestone (fib + factorial + is_prime) | `local` + fan-out | **APPROVED 12/12** across 3 modules | $0.0057 | 3 waves |
+| Three independent modules in parallel (fib + factorial + is_prime) | `local` + fan-out | **APPROVED 12/12** across 3 modules | $0.0057 | 3 |
+| Multi-milestone project (Project Mode) | `local` | **APPROVED 2/2** milestones | $0.0081 | — |
 | FizzBuzz | Phi-4 14B | **5/5 tests passed** | — | 1 |
 
 ### GitHub PR creation — real end-to-end
@@ -148,12 +149,16 @@ fails the run on PR error.
 |---|---|---|
 | Qwen 3.5 9B | 0/2 | Both timeouts (15 min) |
 | Phi-4 14B | 0/3 | 1 exhausted, 1 error, 1 timeout |
-| Qwen2.5-Coder 14B | 0/3 | All exhausted |
+| Qwen2.5-Coder 14B | 0/3 | 2 exhausted, 1 timeout |
 | Qwen3-Coder 30B | 0/2 | Both timeouts |
-| **Total** | **0/11** | — |
+| **Total** | **0/10** | — |
 
-Architects produced correct plans. Implementers couldn't write working
-patches. Delegatron's pipeline shape (3 iterations, no tool-use loop,
+The architect was fixed at qwen3-coder:30b and its plans were not scored in
+these runs; in a separate planning-only test
+([architect-plan-test.md](architect-plan-test.md)) all four local models wrote
+on-topic plans for three simple instances. Implementers couldn't write working
+patches. A separate Qwen3-Coder 30B run on astropy-12907 also failed (error;
+see [swebench-results.md](swebench-results.md)). Delegatron's pipeline shape (3 iterations, no tool-use loop,
 pre-gathered context) doesn't match SWE-bench's requirements.
 
 ### Chess engine — All local models
@@ -183,14 +188,15 @@ Mode.  Cloud models probably satisfy the full template; local models can't.
 |---|---|---|---|
 | `local` (phi4 + qwen2.5-coder:14b + phi4) | ✅ Yes | ~50 tok/s | ✅ Reliable |
 | `local-phi4` (all phi4:14b) | ✅ Yes | ~50 tok/s | ✅ Reliable, fastest |
-| `local-heavy` (qwen3-coder:30b impl) | ❌ No — 35 GB spills to RAM | ~10 tok/s | ⚠️ Unreliable, exhausts |
+| `local-heavy` (qwen3-coder:30b impl) | ❌ No — spills to system RAM | ~10 tok/s | ⚠️ Unreliable, exhausts |
 
 **⚠️ `local-heavy` is NOT recommended on cards under 24 GB VRAM.**
-Qwen3-Coder 30B has 45 GB of weights (MoE, 3.3B active per token).  On a
-12 GB card only ~10 GB fits in VRAM; the remaining 35 GB lives in system
-RAM and gets swapped over PCIe per token.  Result: 3× slower inference
-and exhausted iteration budgets on anything non-trivial.  Only useful on
-cards that can hold the full model in VRAM.
+Qwen3-Coder 30B is about 18 GB on disk (MoE, 3.3B active per token), and
+needs more again for its context cache once loaded.  On a 12 GB card only
+part of it fits in VRAM; the rest lives in system RAM and is read over PCIe
+per token.  Result: about 10 tok/s against ~50 for the 14B presets, and
+exhausted iteration budgets on anything non-trivial.  Only useful on cards
+that can hold the full model in VRAM.
 
 **What local models can do on 12 GB:** FizzBuzz, basic APIs, utility
 modules, single-file scripts, test generation, simple React components,
