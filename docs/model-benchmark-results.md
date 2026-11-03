@@ -17,7 +17,7 @@
 | **Qwen3-Coder** | **30B** | **2/5 tests, exhausted, 577s** | **0/3 tests, exhausted, 775s** | **4/4 smoke only, exhausted, 2657s** |
 | Claude Sonnet (cloud) | -- | N/A | 13/13 APPROVED, 1 iter, $0.10 | 40/41 stalled, 3 iter, $0.43 |
 
-**Legend:** All local models ran the full `local-all` preset (same model for all three roles). Cloud baseline used `single-claude` preset. "Exhausted" means the pipeline hit max iterations without approval. Tests passed shown as best result across all iterations.
+**Legend:** Each local model ran as implementer under the `local-all` preset, with qwen3.5:9b as architect and reviewer (see Configuration above). Cloud baseline used `single-claude` preset. "Exhausted" means the pipeline hit max iterations without approval. Tests passed shown as best result across all iterations.
 
 ## Detailed Results by Model
 
@@ -84,7 +84,7 @@ The model hit the "alternating pattern" stuck detection starting at iteration 3.
 | Task | Tests | Status | Iterations | Cost | EMCS |
 |------|-------|--------|------------|------|------|
 | FastAPI CRUD | 13/13 passed | APPROVED | 1 | $0.10 | 1.0 |
-| Node.js CLI | 12/12 passed | APPROVED | 1 | $0.08 | 1.0 |
+| Node.js project | 12/12 passed | APPROVED | 1 | $0.08 | 1.0 |
 | Chess Engine | 40/41 passed | Stalled | 3 | $0.43 | 0.75 |
 
 **Summary:** Cloud models solved easy and medium tasks in a single iteration with perfect scores. Even on the hard chess task, Claude achieved 40/41 tests (97.6% pass rate) and EMCS 0.75, though it stalled trying to fix the last test.
@@ -97,7 +97,7 @@ Every local model run terminated with "exhausted" status. Even when tests passed
 
 ### 2. Model size does not linearly predict quality
 
-Qwen3-Coder 30B (the largest model) performed worse than Qwen2.5-Coder 14B on both FizzBuzz (2/5 vs 4/5) and FastAPI (0/3 vs 6/8). The 30B model was also 1.4-2x slower per task. Larger models may over-complicate solutions or be more prone to the "rewrite everything" anti-pattern when iterating on feedback.
+Qwen3-Coder 30B (the largest model) performed worse than Qwen2.5-Coder 14B on both FizzBuzz (2/5 vs 4/5) and FastAPI (0/3 vs 6/8). The 30B model was also about 1.45x slower on both (577s vs 398s, 775s vs 539s). Larger models may over-complicate solutions or be more prone to the "rewrite everything" anti-pattern when iterating on feedback.
 
 ### 3. The chess task exposes fundamental self-correction limitations
 
@@ -111,7 +111,7 @@ No local model passed more than basic smoke tests on the chess task. The common 
 
 Across all models and tasks, the most common issue was models generating tests whose expectations did not match the implementation. For FizzBuzz, models would write correct `fizzbuzz()` functions but tests expecting `'3'` instead of `'Fizz'` for `fizzbuzz(4)[2]`. For FastAPI, models would use `typing.List[User]` with dataclasses instead of Pydantic models.
 
-### 5. Cloud models are 50-100x more cost-effective per test passed
+### 5. Local was cheaper per passing test, but about 18x slower
 
 | Metric | Best Local (Qwen2.5-Coder 14B) | Cloud (Claude Sonnet) |
 |--------|--------------------------------|----------------------|
@@ -121,7 +121,7 @@ Across all models and tasks, the most common issue was models generating tests w
 | Cost per test passed | ~$0.002 | ~$0.008 |
 | Time per test passed | ~90s | ~5s |
 
-While local models are cheaper per run, they achieve far fewer test passes. When measured as cost-per-successful-test or time-to-working-code, cloud models dominate.
+Local runs cost less per passing test (~$0.002 vs ~$0.008), but took about 18 times longer per passing test and never reached approval (6/8 vs 13/13). Measured by time to working code, the cloud baseline wins.
 
 ### 6. Iteration count matters less than first-attempt quality
 

@@ -8,7 +8,7 @@ Pure planning test — no implementer, no sandbox, no Docker.
 
 ## TL;DR
 
-**All 4 local models produce correct, on-topic plans for real SWE-bench bugs.**
+**All 4 local models produce relevant, on-topic plans for 3 simple SWE-bench bugs.** (The test checks relevance, not whether a plan would fix the bug.)
 
 The "template collapse" we observed earlier (qwen3.5:9b producing identical
 "CSV mean calculator" plans for every bug) was caused by **stuck Ollama state**,
@@ -131,7 +131,7 @@ For local pipeline runs:
 2. **Use `local-phi4`** for the fastest single-model runs on simple tasks
    (phi4:14b in all roles).  Also fits 12 GB.
 3. **`local-heavy` requires 24 GB+ VRAM.**  The 30B implementer spills
-   30+ GB to system RAM on smaller cards, runs 3× slower per token, and
+   part of the model to system RAM on smaller cards, runs much slower per token, and
    exhausts the iteration budget.  Only useful when the whole model fits
    in GPU memory.
 4. **Restart Ollama** (Settings → Ollama → "Restart Ollama" button, or

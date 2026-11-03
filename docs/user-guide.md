@@ -338,7 +338,7 @@ Each preset's run gets its own run branch, forked from the same base. Like
 
 Evaluate Delegatron on real GitHub issues from the [SWE-bench](https://www.swebench.com/) dataset. Runs multiple instances and reports resolution rates by complexity tier.
 
-⚠️ **SWE-bench evaluation is functional but resolution rate is 0%.** Local models cannot parse complex GitHub issues. Cloud models haven't been tested on enough instances to claim any resolution rate. Use this for infrastructure testing only.
+⚠️ **SWE-bench evaluation is functional but resolution rate is 0%.** In full runs no local model produced a fix (0/10, mostly timeouts and exhausted budgets), although local architects wrote on-topic plans for simple instances in a planning-only test. Cloud models have been tried on one instance (not resolved), too few to claim any resolution rate. Use this for infrastructure testing only.
 
 ```bash
 delegatron swebench --preset local --split lite --instances 10
@@ -546,7 +546,7 @@ Built-in presets for common scenarios:
 - **local-oss** — Phi-4:14b + gpt-oss:20b + Phi-4:14b (best local quality; 13 GB MXFP4, fits 12 GB VRAM with some CPU offload)
 - **local-oss-review** — Phi-4:14b + Qwen2.5-Coder:14b + gpt-oss:20b reviewer (strongest local review, about twice the reviewer latency)
 - **local-phi4** — Phi-4:14b in all roles (single-model, fastest local, simple tasks)
-- **local-heavy** — Phi-4:14b + Qwen3-Coder:30b + Phi-4:14b, 10 iters per task. **⚠️ Requires 24 GB+ VRAM.** On 12 GB cards the 30B implementer spills 30+ GB to system RAM, runs 3× slower, and exhausts the iteration budget on non-trivial tasks. Use `local` or `local-phi4` instead.
+- **local-heavy** — Phi-4:14b + Qwen3-Coder:30b + Phi-4:14b, 10 iters per task. **⚠️ Requires 24 GB+ VRAM.** On 12 GB cards the 30B implementer spills to system RAM, runs about 10 tok/s instead of ~50, and exhausts the iteration budget on non-trivial tasks. Use `local` or `local-phi4` instead.
 - **single-claude** — All Claude Sonnet (single-agent baseline)
 - **single-gpt** — All GPT-4.1 (single-agent baseline)
 - **mock** — No real API calls, for testing the pipeline

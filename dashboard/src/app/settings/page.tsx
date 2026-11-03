@@ -18,7 +18,7 @@ const PRESETS = [
   { value: "local", label: "Local (default)", description: "phi4 + qwen2.5-coder:14b + phi4 — 12 GB VRAM baseline, passes fib + React cleanly.", local: true },
   { value: "local-oss-review", label: "Local OSS Review", description: "phi4 + qwen2.5-coder:14b + gpt-oss:20b — strongest local review (~2× reviewer latency for tougher architectural critique).", local: true },
   { value: "local-phi4", label: "Local Phi-4", description: "phi4:14b all roles — fastest local option for simple tasks.", local: true },
-  { value: "local-heavy", label: "Local Heavy ⚠️", description: "phi4 + qwen3-coder:30b + phi4 — REQUIRES 24 GB+ VRAM. Spills 30+ GB to RAM on smaller cards, 3× slower.", local: true },
+  { value: "local-heavy", label: "Local Heavy ⚠️", description: "phi4 + qwen3-coder:30b + phi4 — REQUIRES 24 GB+ VRAM. Spills to system RAM on smaller cards and runs much slower.", local: true },
   { value: "default", label: "Cloud Trio", description: "Balanced quality and cost (Claude + GPT + Gemini)", local: false },
   { value: "claude-heavy", label: "Claude Heavy", description: "Claude architect + implementer, Gemini reviewer", local: false },
   { value: "budget", label: "Budget", description: "All Gemini Flash (cheapest cloud option)", local: false },

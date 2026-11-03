@@ -107,12 +107,12 @@
             <li data-cost="0.0027" data-say="Six tests pass. The reviewer approves the first task."><span class="i">#1</span><span class="b pass">pass 6/6</span><span class="v">approved</span><span class="s">Implemented the Card and Deck classes</span><span class="c">$0.0027</span></li>
             <li data-cost="0.0039" data-say="The next pass rewrites the test file. Six tests become two, and one fails on a name the test never defined. Sent back."><span class="i">#2</span><span class="b fail">fail 1/2</span><span class="v">rejected</span><span class="s">Fixed the import statement for the shuffle</span><span class="c">$0.0039</span></li>
             <li data-cost="0.0048" data-say="Green again, but on two tests: the rewrite dropped four of the original six. Approved anyway."><span class="i">#3</span><span class="b pass">pass 2/2</span><span class="v">approved</span><span class="s">Fixed the issue by defining original_cards</span><span class="c">$0.0048</span></li>
-            <li data-cost="0.0069" data-say="The last task goes in. Seven tests run, and its own new test fails on a bad mock." class="loopback"><span class="i">#4</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Implemented the initial card selection</span><span class="c">$0.0069</span></li>
+            <li data-cost="0.0069" data-say="The last task goes in. Seven tests run and two fail: one checks the dealt card is still in the deck, the other breaks on a bad mock." class="loopback"><span class="i">#4</span><span class="b fail">fail 2/7</span><span class="v">rejected</span><span class="s">Implemented the initial card selection</span><span class="c">$0.0069</span></li>
             <li data-cost="0.0090" data-say="A fix. Now the test miscounts the printed lines (12 != 10), and a shuffle test flakes. Two of seven fail." class="loopback"><span class="i">#5</span><span class="b fail">fail 2/7</span><span class="v">rejected</span><span class="s">Fixed the deal_card method</span><span class="c">$0.0090</span></li>
             <li data-cost="0.0111" data-say="Another fix. The same test still fails: 12 != 10." class="loopback"><span class="i">#6</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Fixed the shuffle method in Deck</span><span class="c">$0.0111</span></li>
-            <li data-cost="0.0131" data-say="The code and the test both change (now 14 != 12), and the same test fails. The stall detector stops the run at $0.0131." class="loopback"><span class="i">#7</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Fixed the issue with the incorrect number…</span><span class="c">$0.0131</span></li>
+            <li data-cost="0.0131" data-say="The code and the test both change (now 14 != 12), and the same test fails. The stall detector stops the run at $0.0131." class="loopback"><span class="i">#7</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Fixed the incorrect number of print calls</span><span class="c">$0.0131</span></li>
           </ol>
-          <aside class="margin-note log-note">Four tries, one failing test. The code was right and the test miscounted, but nothing in the loop could tell which side to fix. We changed the loop for this afterwards. A scripted replay of this run now ends approved; we never re-ran it live.</aside>
+          <aside class="margin-note log-note">Four tries. By the end, one test kept failing on a print count. The code was right and the test miscounted, but nothing in the loop could tell which side to fix. We changed the loop for this afterwards. A scripted replay of this run now ends approved; we never re-ran it live.</aside>
           <p class="stamp" id="stamp"><span>Stalled</span></p>
         </div>
       </div>
@@ -211,7 +211,7 @@
       <header class="sec-head reveal">
         <p class="kicker"><span>§5</span> The dashboard</p>
         <h2>The dashboard</h2>
-        <p class="lede">Delegatron keeps every plan, patch, test report and review. The run detail and zero-cloud screens below are from the stalled run above.</p>
+        <p class="lede">Delegatron keeps every plan, patch, test report and review. The run detail and zero-cloud screens below are from the stalled run above. That zero-cloud report was written by an older version, which labelled it “enforcing”; current versions call every report an audit, because nothing is blocked.</p>
       </header>
       <div class="shots" role="tablist" aria-label="Dashboard screens">
         <button type="button" role="tab" id="tab-run" aria-selected="true" aria-controls="shot" data-shot="run-detail" data-alt="Run detail: seven iterations with their test results, review verdicts and cost"><span>a</span>Run detail</button>

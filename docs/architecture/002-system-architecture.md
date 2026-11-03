@@ -336,7 +336,7 @@ Pre-configured role combinations for common use cases:
 | `budget` | Gemini 2.5 Flash | Gemini 2.5 Flash | Gemini 2.5 Flash | Cheapest cloud |
 | `local` | phi4:14b (local) | qwen2.5-coder:14b (local) | phi4:14b (local) | Default local, fits 12 GB VRAM |
 | `local-phi4` | phi4:14b (local) | phi4:14b (local) | phi4:14b (local) | Fits 12 GB VRAM, fastest single-model |
-| `local-heavy` | phi4:14b (local) | qwen3-coder:30b (local) | phi4:14b (local) | **⚠️ Requires 24 GB+ VRAM.** Spills 30+ GB to RAM on smaller cards |
+| `local-heavy` | phi4:14b (local) | qwen3-coder:30b (local) | phi4:14b (local) | **⚠️ Requires 24 GB+ VRAM.** Spills to system RAM on smaller cards |
 | `local-oss` | phi4:14b (local) | gpt-oss:20b (local) | phi4:14b (local) | Best local quality (validated 2026-04-18); 13 GB MXFP4, modest CPU offload on 12 GB |
 | `local-oss-review` | phi4:14b (local) | qwen2.5-coder:14b (local) | gpt-oss:20b (local) | Strongest local review, ~2× reviewer latency |
 | `single-claude` | Claude Sonnet 4 | Claude Sonnet 4 | Claude Sonnet 4 | Baseline (cloud) |
