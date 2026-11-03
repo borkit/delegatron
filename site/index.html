@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Delegatron · AI models that check each other's code</title>
-  <meta name="description" content="Delegatron turns a plain-language request into tested, reviewed code: one model plans, another writes, a sandbox runs the tests and a third reviews. Here is the full record, failures included, and the source under the AGPL.">
+  <meta name="description" content="Delegatron turns a plain-language request into tested, reviewed code: one model plans, another writes, a sandbox runs the tests and a third reviews. What worked, what didn't, and the source under the AGPL.">
   <meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0c1d30" media="(prefers-color-scheme: dark)">
   <meta name="author" content="StoriaBrevi LLC">
@@ -16,7 +16,7 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://delegatron.com/">
   <meta property="og:title" content="Delegatron · AI models that check each other's code">
-  <meta property="og:description" content="One model plans, another writes, a sandbox tests, a third reviews. The full record of what worked and what didn't, and the source, free under the AGPL.">
+  <meta property="og:description" content="One model plans, another writes, a sandbox tests, a third reviews. What worked, what didn't, and the source, free under the AGPL.">
   <meta property="og:image" content="https://delegatron.com/og.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -29,7 +29,7 @@
   <script type="application/ld+json">
     {"@context": "https://schema.org", "@type": "SoftwareSourceCode",
      "name": "Delegatron", "url": "https://delegatron.com/", "image": "https://delegatron.com/og.jpg",
-     "description": "Turns a plain-language request into tested, reviewed code: one model plans, another writes, a sandbox runs the tests and a third reviews, in a loop until it passes.",
+     "description": "Turns a plain-language request into tested, reviewed code: one model plans, another writes, a sandbox runs the tests and a third reviews, in a loop until it passes, stalls or runs out of budget.",
      "codeRepository": "https://github.com/borkit/delegatron",
      "programmingLanguage": "Python", "runtimePlatform": "Python 3.11+",
      "license": "https://www.gnu.org/licenses/agpl-3.0.html", "version": "0.3.0",
@@ -64,11 +64,12 @@
     <!-- Hero: the title page of the notebook. -->
     <section id="top" class="hero sheet">
       <p class="folio"><span>Field notes</span><span>Delegatron 0.3</span><span>Final entry · 2026</span></p>
-      <h1>We built AI models that <span class="mark" data-rough="underline">check each other's code.</span></h1>
-      <aside class="margin-note hero-note" data-for="hero">Mostly. The record below shows where they didn't.</aside>
-      <p class="lede">One model plans, another writes, a sandbox runs the tests and a third reviews, round and round until it passes or the budget runs out. This page is the full record: what worked, what never did, and why the code is now free.</p>
+      <h1>Delegatron hands a coding task to several AI models and has them <span class="mark" data-rough="underline">check each other's work.</span></h1>
+      <aside class="margin-note hero-note" data-for="hero">It didn't always work. The results below show where.</aside>
+      <p class="lede">The idea was simple. Don't ask one AI model to do everything and then take its word that the code works. Split the job up the way you would with people: someone plans, someone writes, someone reviews, and the tests decide who's right. Delegatron hands each of those jobs to a model you pick, and keeps sending the work back until the tests pass, the run stalls, or the budget runs out.</p>
+      <p class="lede">We ran it a lot, on cloud models and on a single 12&nbsp;GB graphics card. Some of it worked well. Some of it never did. This page is the record of both.</p>
       <div class="ctas">
-        <a class="btn" href="#record">Read the record</a>
+        <a class="btn" href="#record">See the results</a>
         <a class="btn btn-ghost" href="https://github.com/borkit/delegatron" rel="noopener">View source on GitHub</a>
       </div>
       <dl class="ticker" aria-label="A real run, as recorded">
@@ -84,34 +85,34 @@
     <section id="loop" class="sheet">
       <header class="sec-head reveal">
         <p class="kicker"><span>§1</span> The loop</p>
-        <h2>Four roles, one loop, clear rules.</h2>
-        <p class="lede">Ask one model to write code and it will tell you the code works. Delegatron splits the job the way a small team would, and lets the tests settle the arguments.</p>
+        <h2>How it works</h2>
+        <p class="lede">Ask one model to write some code and it will usually tell you the code works. It has no reason to doubt itself. So we split the job into four roles, and made the tests the referee.</p>
       </header>
       <ol class="roles">
-        <li class="reveal"><span class="n">01</span><h3>Plan</h3><p>An architect turns the request into small tasks, each with acceptance criteria and the tests that prove it.</p></li>
-        <li class="reveal"><span class="n">02</span><h3>Build</h3><p>An implementer writes the code and its tests as a patch. Nothing touches the project until it's checked.</p></li>
-        <li class="reveal"><span class="n">03</span><h3>Test</h3><p>The patch runs in an isolated sandbox. A failing test is the one opinion nobody gets to argue with.</p></li>
-        <li class="reveal"><span class="n">04</span><h3>Review</h3><p>A reviewer reads the change and the evidence, then approves it or sends it back with the problems listed.</p></li>
+        <li class="reveal"><span class="n">01</span><h3>Plan</h3><p>The architect reads your request and breaks it into small tasks, each naming the files it will write, tests included. It also sets the acceptance criteria for the whole job.</p></li>
+        <li class="reveal"><span class="n">02</span><h3>Build</h3><p>The implementer writes the code and its tests as a patch. Patches go onto a separate branch for the run, never onto yours.</p></li>
+        <li class="reveal"><span class="n">03</span><h3>Test</h3><p>The patch runs in a sandbox, away from your files. If a new test fails, that settles the argument.</p></li>
+        <li class="reveal"><span class="n">04</span><h3>Review</h3><p>The reviewer reads the change next to the test results, then approves it or sends it back with a list of what's wrong.</p></li>
       </ol>
 
       <div class="replay" id="replay">
         <div class="replay-copy">
-          <p class="kicker">A real run, replayed</p>
-          <h3 class="replay-title">“Simulate a card game's first deal with a Python script.”</h3>
-          <p>Local models on one graphics card. Scroll to step through all seven iterations as the dashboard recorded them.</p>
-          <p class="replay-status" id="replay-status" aria-live="polite">Seven iterations, then the stall detector stopped the run.</p>
+          <p class="kicker">One real run</p>
+          <h3 class="replay-title">Simulate a card game's first deal with a Python script</h3>
+          <p>This one ran on local models, on one graphics card. Keep scrolling and you'll see all seven iterations, as the dashboard logged them. The cost column is a running total.</p>
+          <p class="replay-status" id="replay-status" aria-live="polite">Seven iterations. Then the stall detector stopped it.</p>
         </div>
         <div class="log-wrap">
           <ol class="log" id="log">
-            <li data-cost="0.0027" data-say="Iteration 1 passes 6 tests and is approved."><span class="i">#1</span><span class="b pass">pass 6</span><span class="v">approved</span><span class="s">Implemented the Card and Deck classes</span><span class="c">$0.0027</span></li>
-            <li data-cost="0.0039" data-say="A fix to an import breaks 2 tests. Sent back."><span class="i">#2</span><span class="b fail">fail 2</span><span class="v">rejected</span><span class="s">Fixed the import statement for the shuffle</span><span class="c">$0.0039</span></li>
-            <li data-cost="0.0048" data-say="Back to green, approved again."><span class="i">#3</span><span class="b pass">pass 2</span><span class="v">approved</span><span class="s">Fixed the issue by defining original_cards</span><span class="c">$0.0048</span></li>
-            <li data-cost="0.0069" data-say="The next piece of work goes in, and 7 tests fail." class="loopback"><span class="i">#4</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Implemented the initial card selection</span><span class="c">$0.0069</span></li>
-            <li data-cost="0.0090" data-say="A fix. The same 7 tests fail." class="loopback"><span class="i">#5</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the deal_card method</span><span class="c">$0.0090</span></li>
-            <li data-cost="0.0111" data-say="Another fix. The same 7 tests fail." class="loopback"><span class="i">#6</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the shuffle method in Deck</span><span class="c">$0.0111</span></li>
-            <li data-cost="0.0131" data-say="Same again. Stall detected, run stopped at $0.0131." class="loopback"><span class="i">#7</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the incorrect number of cards</span><span class="c">$0.0131</span></li>
+            <li data-cost="0.0027" data-say="Six tests pass. The reviewer approves the first task."><span class="i">#1</span><span class="b pass">pass 6/6</span><span class="v">approved</span><span class="s">Implemented the Card and Deck classes</span><span class="c">$0.0027</span></li>
+            <li data-cost="0.0039" data-say="The next pass rewrites the test file. Six tests become two, and one fails on a name the test never defined. Sent back."><span class="i">#2</span><span class="b fail">fail 1/2</span><span class="v">rejected</span><span class="s">Fixed the import statement for the shuffle</span><span class="c">$0.0039</span></li>
+            <li data-cost="0.0048" data-say="Green again, but on two tests: the rewrite dropped four of the original six. Approved anyway."><span class="i">#3</span><span class="b pass">pass 2/2</span><span class="v">approved</span><span class="s">Fixed the issue by defining original_cards</span><span class="c">$0.0048</span></li>
+            <li data-cost="0.0069" data-say="The last task goes in. Seven tests run, and its own new test fails on a bad mock." class="loopback"><span class="i">#4</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Implemented the initial card selection</span><span class="c">$0.0069</span></li>
+            <li data-cost="0.0090" data-say="A fix. Now the test miscounts the printed lines (12 != 10), and a shuffle test flakes. Two of seven fail." class="loopback"><span class="i">#5</span><span class="b fail">fail 2/7</span><span class="v">rejected</span><span class="s">Fixed the deal_card method</span><span class="c">$0.0090</span></li>
+            <li data-cost="0.0111" data-say="Another fix. The same test still fails: 12 != 10." class="loopback"><span class="i">#6</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Fixed the shuffle method in Deck</span><span class="c">$0.0111</span></li>
+            <li data-cost="0.0131" data-say="The code and the test both change (now 14 != 12), and the same test fails. The stall detector stops the run at $0.0131." class="loopback"><span class="i">#7</span><span class="b fail">fail 1/7</span><span class="v">rejected</span><span class="s">Fixed the issue with the incorrect number…</span><span class="c">$0.0131</span></li>
           </ol>
-          <aside class="margin-note log-note">Four fixes, one failure. Models rewrote whole files instead of finding the bug. We never solved this.</aside>
+          <aside class="margin-note log-note">Four tries, one failing test. The code was right and the test miscounted, but nothing in the loop could tell which side to fix. We changed the loop for this afterwards. A scripted replay of this run now ends approved; we never re-ran it live.</aside>
           <p class="stamp" id="stamp"><span>Stalled</span></p>
         </div>
       </div>
@@ -121,66 +122,68 @@
     <section id="record" class="sheet">
       <header class="sec-head reveal">
         <p class="kicker"><span>§2</span> The record</p>
-        <h2>What it's good at, and what it isn't.</h2>
-        <p class="lede">End-to-end runs, start to finish with no human edits. Local costs are electricity and hardware wear on a single 12&nbsp;GB card.</p>
+        <h2>Results from real runs</h2>
+        <p class="lede">These are end-to-end runs of the whole loop. For local models, the cost is electricity and wear on one 12&nbsp;GB card.</p>
       </header>
       <div class="table-wrap reveal">
         <table class="record">
           <thead><tr><th scope="col">Task</th><th scope="col">Models</th><th scope="col">Result</th><th scope="col" class="num">Cost</th></tr></thead>
           <tbody>
             <tr><td>Web service with a database</td><td>Cloud</td><td><span class="b pass">13 / 13</span> approved</td><td class="num">$0.10</td></tr>
-            <tr><td>JavaScript API with tests</td><td>Cloud</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.08</td></tr>
-            <tr><td>Three-module project</td><td>Local</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.006</td></tr>
+            <tr><td>Node.js project with tests</td><td>Cloud</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.08</td></tr>
+            <tr><td>Three small modules, built in parallel</td><td>Local</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.006</td></tr>
             <tr><td>Interactive web component</td><td>Local</td><td><span class="b pass">2 / 2</span> approved</td><td class="num">$0.006</td></tr>
-            <tr><td>Rust, Go, Java and PHP modules</td><td>Local</td><td><span class="b pass">4 / 4</span> approved, each</td><td class="num">≈$0.005</td></tr>
+            <tr><td>Rust, Java and PHP modules</td><td>Local</td><td><span class="b pass">4 / 4</span> approved, each</td><td class="num">$0.005–0.006</td></tr>
+            <tr><td>Go module</td><td>Local</td><td><span class="b pass">approved</span></td><td class="num">$0.005</td></tr>
             <tr class="row-stall"><td>Chess engine with a board UI</td><td>Cloud</td><td><span class="b stall" data-rough="circle">40 / 41</span> stalled</td><td class="num">$0.43</td></tr>
             <tr class="row-fail"><td>Chess engine with a board UI</td><td>Local</td><td><span class="b fail">0 approvals</span> in 19+ runs</td><td class="num">—</td></tr>
-            <tr class="row-fail"><td>Real GitHub bugs (SWE-bench)</td><td>Local</td><td><span class="b fail" data-rough="circle">0 / 11</span> resolved</td><td class="num">—</td></tr>
+            <tr class="row-fail"><td>Real GitHub bugs (SWE-bench)</td><td>Local</td><td><span class="b fail" data-rough="circle">0 resolved</span> across four models</td><td class="num">—</td></tr>
+            <tr class="row-fail"><td>Real GitHub bug (SWE-bench)</td><td>Cloud</td><td><span class="b fail">0 / 1</span> exhausted</td><td class="num">$0.43</td></tr>
             <tr class="row-fail"><td>Full CLI tool in one go</td><td>Local</td><td><span class="b fail">exhausted</span> on 14B and 30B</td><td class="num">—</td></tr>
           </tbody>
         </table>
-        <aside class="margin-note record-note">The architects planned real GitHub bugs correctly every time. The implementers couldn't write a working patch for one of them.</aside>
+        <aside class="margin-note record-note">In a separate test, every local architect wrote an on-topic plan for three simple bugs. In full runs, not one attempt produced a fix, and many timed out first.</aside>
       </div>
-      <p class="aside-line reveal">Built for new code: services, tools, modules and test suites. Not a bug fixer for large existing codebases, and a person still has to read what it writes.</p>
+      <p class="aside-line reveal">So it's good at new, self-contained code, like services, tools, modules and test suites. It isn't good at fixing bugs in big existing codebases. And whatever it writes, a person should still read it.</p>
     </section>
 
     <!-- Findings: the struggles, as numbered notebook entries. -->
     <section id="findings" class="sheet">
       <header class="sec-head reveal">
         <p class="kicker"><span>§3</span> Findings</p>
-        <h2>Six things we learned the hard way.</h2>
-        <p class="lede">From benchmarks of four local models and a cloud baseline, on the same tasks and the same hardware. The full numbers are in the repository's docs.</p>
+        <h2>What we learned</h2>
+        <p class="lede">We benchmarked four local models on one 12&nbsp;GB card, with Claude Sonnet as a cloud baseline on two of the same tasks. The full numbers are in the repo's docs folder.</p>
       </header>
       <ol class="findings">
         <li class="reveal">
           <p class="fig"><span>“3”</span> <em>instead of</em> <span>“Fizz”</span></p>
-          <h3>Tests and code disagree more often than either is wrong.</h3>
-          <p>The most common failure across every model: a correct function, and a test that expects the wrong answer. The loop then “fixes” the code to match the broken test.</p>
+          <h3>The most common failure was tests that didn't match the code.</h3>
+          <p>It happened with every model. In one case a correct FizzBuzz was tested for “3” where the answer is “Fizz”. In the run above, the reviewer blamed the code, which was right.</p>
         </li>
         <li class="reveal">
           <p class="fig"><span>30B</span> 2/5 <em>vs</em> <span>14B</span> 4/5</p>
-          <h3>A bigger model didn't do better.</h3>
-          <p>Qwen3-Coder 30B lost to Qwen2.5-Coder 14B on FizzBuzz and on a FastAPI service, and took up to twice as long. It seemed more inclined to rewrite everything.</p>
+          <h3>Bigger wasn't better.</h3>
+          <p>Qwen3-Coder 30B did worse than Qwen2.5-Coder 14B on FizzBuzz and on a FastAPI service, and it took about 45% longer. It also seemed keener to rewrite everything.</p>
         </li>
         <li class="reveal">
           <p class="fig"><span>6</span> iterations <em>&lt;</em> <span>3</span></p>
-          <h3>More iterations meant more regressions.</h3>
-          <p>Doubling the budget on the chess task made results worse. The first attempt got close (9 of 11 tests); every later one broke something that had worked.</p>
+          <h3>More attempts made it worse.</h3>
+          <p>We gave Qwen3-Coder 30B six iterations on the chess task instead of three. Its first attempt got closest, at 9 of 11 tests. Later ones went backwards, and the last only passed by swapping the real tests for smoke tests.</p>
         </li>
         <li class="reveal">
-          <p class="fig"><span>35 GB</span> in system RAM</p>
-          <h3>A 12&nbsp;GB card is a hard wall.</h3>
-          <p>The 30B model's weights don't fit, so most of them stream over PCIe for every token: about 10 tokens a second instead of 50, and budgets run out before the work is done.</p>
+          <p class="fig"><span>10</span> tokens/s <em>vs</em> <span>50</span></p>
+          <h3>12&nbsp;GB is a hard limit.</h3>
+          <p>The 30B model doesn't fit on the card, so much of it lives in system memory and crosses the PCIe bus for every token. It ran at about 10 tokens a second, against about 50 for the 14B models that fit, and ran out of budget on anything non-trivial.</p>
         </li>
         <li class="reveal">
           <p class="fig"><span>5 s</span> <em>vs</em> <span>90 s</span> per passing test</p>
-          <h3>Local was cheaper per run, not per result.</h3>
-          <p>Measured per passing test or by time to working code, the cloud baseline won by a wide margin. Running locally buys privacy, not savings.</p>
+          <h3>Local was cheaper, but far slower.</h3>
+          <p>On the FastAPI task the best local model cost about $0.002 per passing test, against $0.008 in the cloud. But it took 90 seconds per passing test against 5, and only got 6 of 8 tests passing, so the run was never approved.</p>
         </li>
         <li class="reveal">
-          <p class="fig"><span>0</span> approvals, first benchmark</p>
-          <h3>Getting local models to finish at all was the real work.</h3>
-          <p>In the first benchmark, no local model reached an approval on any task, even when every test passed. Simple tasks pass now, after a long list of fixes to the loop itself.</p>
+          <p class="fig"><span>0</span> approvals, 16 April</p>
+          <h3>Getting local models to finish at all took a lot of fixing.</h3>
+          <p>In our 16 April benchmark, not one local model got a task approved, even when every test passed. A day later simple tasks were passing, after a batch of fixes and a switch to Phi-4 as architect and reviewer. Even so, the run above still stalled.</p>
         </li>
       </ol>
     </section>
@@ -188,18 +191,18 @@
     <!-- What's in the box: the engineering, as a spec sheet. -->
     <section id="spec" class="sheet">
       <header class="sec-head reveal">
-        <p class="kicker"><span>§4</span> What's in the box</p>
-        <h2>Careful by design.</h2>
+        <p class="kicker"><span>§4</span> Features</p>
+        <h2>What's in it</h2>
       </header>
       <dl class="spec reveal">
-        <div><dt>Any model, any role</dt><dd>Local models on one 12&nbsp;GB card, cloud models, or a mix, chosen per role.</dd></div>
-        <div><dt>Hard limits</dt><dd>Iterations, spend and time are capped by Delegatron itself, never left to the model.</dd></div>
-        <div><dt>Evidence order</dt><dd>Failing tests beat security checks, which beat reviewer objections, which beat opinions. Repeated disputes get one binding ruling.</dd></div>
-        <div><dt>Patch checks</dt><dd>Leaked secrets, new dependencies and imports that won't resolve are caught before a patch is accepted.</dd></div>
-        <div><dt>Zero-cloud report</dt><dd>Every run records each network destination it touched, so you can show nothing left the building.</dd></div>
+        <div><dt>Any model, any role</dt><dd>Run each role on a local model, a cloud model, or mix the two. Local models fit on one 12&nbsp;GB card.</dd></div>
+        <div><dt>Hard limits</dt><dd>Delegatron itself caps iterations, spending and time. The models don't get a say.</dd></div>
+        <div><dt>Evidence order</dt><dd>When the roles disagree, a failing test beats a security check, which beats a reviewer's blocking issue, which beats the director's opinion. A dispute that keeps coming back goes to the director once, for a binding ruling.</dd></div>
+        <div><dt>Patch checks</dt><dd>Every patch is scanned for leaked secrets, project-rule violations and new dependencies, and its imports are checked. The findings go to the implementer and reviewer. In block mode, a patch with a secret or rule violation is never applied.</dd></div>
+        <div><dt>Zero-cloud report</dt><dd>Each run lists every model, sandbox and storage call Delegatron made, and flags any that left your network. Package installs inside the Docker sandbox still reach their registries.</dd></div>
         <div><dt>Languages</dt><dd>Python, JavaScript and TypeScript, Go, Rust, Java and PHP, each tested in its own sandbox.</dd></div>
-        <div><dt>Templates</dt><dd>Thirty: web APIs, command-line tools, audits and test suites.</dd></div>
-        <div><dt>Interfaces</dt><dd>Terminal, REST API with live updates, or the dashboard. Every run gets its own branch.</dd></div>
+        <div><dt>Templates</dt><dd>Thirty ready-made ones, for web APIs, command-line tools, audits and test suites.</dd></div>
+        <div><dt>Interfaces</dt><dd>Use it from the terminal, a REST API with live updates, or the dashboard. In a git repository, every run commits to its own branch.</dd></div>
       </dl>
     </section>
 
@@ -207,8 +210,8 @@
     <section id="dashboard" class="sheet">
       <header class="sec-head reveal">
         <p class="kicker"><span>§5</span> The dashboard</p>
-        <h2>Nothing happens off the record.</h2>
-        <p class="lede">Every plan, patch, test report and review is kept. The screens below come from the stalled run replayed above.</p>
+        <h2>The dashboard</h2>
+        <p class="lede">Delegatron keeps every plan, patch, test report and review. The run detail and zero-cloud screens below are from the stalled run above.</p>
       </header>
       <div class="shots" role="tablist" aria-label="Dashboard screens">
         <button type="button" role="tab" id="tab-run" aria-selected="true" aria-controls="shot" data-shot="run-detail" data-alt="Run detail: seven iterations with their test results, review verdicts and cost"><span>a</span>Run detail</button>
@@ -219,26 +222,26 @@
       <figure class="photo" id="shot" role="tabpanel" aria-labelledby="tab-run">
         <img src="/media/run-detail.webp" width="1920" height="1200" loading="lazy" decoding="async"
              alt="Run detail: seven iterations with their test results, review verdicts and cost">
-        <figcaption>Fig. 5 · Screens from a real run on local models.</figcaption>
+        <figcaption>Fig. 5 · From the dashboard, on local models.</figcaption>
       </figure>
     </section>
 
-    <!-- DRAFT: replace with the author's own reasons for releasing the code. -->
+    <!-- Why it's free, in the author's own account. -->
     <section id="why" class="sheet why">
       <header class="sec-head reveal">
         <p class="kicker"><span>§6</span> Why it's free</p>
-        <h2>Finished, and given away as it stands.</h2>
+        <h2>Why the code is free</h2>
       </header>
       <div class="essay reveal">
-        <p>Delegatron is done. It does what this page says it does and stops where this page says it stops, and the gap between the two is the part we found most worth sharing.</p>
-        <p>Rather than leave it in a drawer, we're publishing the code and the record together under the AGPL&#8209;3.0, so anyone working on models that check each other can start from our results, and our failures, instead of repeating them.</p>
+        <p>We built Delegatron to find out whether AI models could reliably check each other's work. It was an education. It was never a product, it never made a penny, and it cost us more time and money than we'd like to admit.</p>
+        <p>Rather than let it sit in a drawer, we're putting the code and these results out under the AGPL&#8209;3.0. If you're trying something similar, maybe it saves you some of what it cost us.</p>
         <p class="sig">StoriaBrevi LLC</p>
       </div>
     </section>
 
     <section id="source" class="sheet source">
       <dl class="status reveal">
-        <div><dt>Status</dt><dd>Version 0.3, complete, not maintained</dd></div>
+        <div><dt>Status</dt><dd>Version 0.3, published as is, not maintained</dd></div>
         <div><dt>License</dt><dd>GNU AGPL&#8209;3.0, no warranty</dd></div>
         <div><dt>Support</dt><dd>None, including installation help</dd></div>
         <div><dt>Contributions</dt><dd>Issues and pull requests are not accepted</dd></div>

@@ -62,7 +62,7 @@ body {
 a { color: inherit; text-underline-offset: .2em; }
 img { display: block; max-width: 100%; height: auto; }
 h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.015em; line-height: 1.06; }
-h1 { font-size: clamp(2.6rem, 6.4vw, 5.4rem); font-weight: 400; max-width: 14ch; }
+h1 { font-size: clamp(2.1rem, 4.4vw, 3.7rem); font-weight: 400; max-width: 22ch; line-height: 1.1; }
 h2 { font-size: clamp(2rem, 4.2vw, 3.3rem); font-weight: 400; max-width: 18ch; }
 h3 { font-size: 1.32rem; line-height: 1.2; }
 p { margin: 0; }
@@ -178,7 +178,7 @@ p { margin: 0; }
 .log-wrap { position: relative; }
 .log { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); font-family: var(--mono); font-size: .82rem; }
 .log li {
-  display: grid; grid-template-columns: 3ch 8ch 9ch minmax(0, 1fr) 7ch; gap: 14px; align-items: center;
+  display: grid; grid-template-columns: 3ch 9ch 9ch minmax(0, 1fr) 7ch; gap: 14px; align-items: center;
   padding: 13px 0; border-bottom: 1px solid var(--rule);
 }
 .log .i { color: var(--muted); }
@@ -207,7 +207,7 @@ p { margin: 0; }
 .js .stamp { border-color: transparent; }
 @media (max-width: 860px) {
   .replay { grid-template-columns: 1fr; }
-  .log li { grid-template-columns: 3ch 8ch 1fr 7ch; row-gap: 4px; }
+  .log li { grid-template-columns: 3ch 9ch 1fr 7ch; row-gap: 4px; }
   .log .s { grid-column: 2 / -1; grid-row: 2; white-space: normal; color: var(--muted); }
   .stamp { position: relative; right: auto; bottom: auto; display: inline-block; margin-top: 20px; }
 }
