@@ -36,6 +36,8 @@
 ## Project status
 
 Delegatron is published by [StoriaBrevi LLC](https://storiabrevi.com) as a **portfolio showcase**.
+It began as an education in getting AI models to check each other's work; it never became a
+product and never made money, and it's published with its failures included.
 The code is provided as-is under the [GNU Affero General Public License v3.0](LICENSE), with no
 warranty. There is **no support and no installation help**, and **issues and pull requests are
 not accepted**. See [delegatron.com](https://delegatron.com) for more about the project.
