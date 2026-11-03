@@ -848,6 +848,28 @@ class TestCallDeadline:
         with pytest.raises(TimeoutError, match="ConcreteAgent: no response from the provider"):
             await agent.invoke({"message": "hi"})
 
+    async def test_cancel_during_a_call_that_already_finished_is_kept(self):
+        # Python 3.11's wait_for dropped this cancel (CPython gh-86296), so a
+        # cancelled run on an instant provider kept going.
+        caller: asyncio.Task[None] | None = None
+
+        async def answer_and_cancel_the_caller(**kwargs: Any) -> ProviderResponse:
+            assert caller is not None
+            caller.cancel()
+            return _make_response(VALID)
+
+        provider = AsyncMock(spec=BaseProvider)
+        provider.generate = AsyncMock(side_effect=answer_and_cancel_the_caller)
+        agent = ConcreteAgent(provider=provider, system_prompt="sys", timeout_seconds=30)
+
+        async def run() -> None:
+            await agent.invoke({"message": "hi"})
+            await asyncio.sleep(0)
+
+        caller = asyncio.create_task(run())
+        with pytest.raises(asyncio.CancelledError):
+            await caller
+
     async def test_stalled_stream_falls_back_to_a_plain_call(self):
         provider = AsyncMock(spec=BaseProvider)
 
