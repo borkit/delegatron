@@ -3,7 +3,7 @@
 # match it); the page itself never writes visitor text as HTML. The two
 # cloudflareinsights.com hosts are Cloudflare Web Analytics.
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self' https://cloudflareinsights.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
@@ -12,6 +12,9 @@
   Cross-Origin-Opener-Policy: same-origin
 
 /vendor/*
+  Cache-Control: public, max-age=604800
+
+/fonts/*
   Cache-Control: public, max-age=604800
 
 # Search engines should list delegatron.com, not the Pages preview hostname.

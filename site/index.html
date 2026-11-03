@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Delegatron · AI models that check each other's code</title>
-  <meta name="description" content="Delegatron turns a plain-language request into tested, reviewed code. One model plans, another writes, a sandbox runs the tests and a third reviews, on your own hardware or in the cloud. Open source by StoriaBrevi LLC.">
-  <meta name="theme-color" content="#040806">
+  <meta name="description" content="Delegatron turns a plain-language request into tested, reviewed code: one model plans, another writes, a sandbox runs the tests and a third reviews. Here is the full record, failures included, and the source under the AGPL.">
+  <meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c1d30" media="(prefers-color-scheme: dark)">
   <meta name="author" content="StoriaBrevi LLC">
   <link rel="canonical" href="https://delegatron.com/">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -15,14 +16,14 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://delegatron.com/">
   <meta property="og:title" content="Delegatron · AI models that check each other's code">
-  <meta property="og:description" content="Describe it in plain words. Delegatron plans it, writes it, tests it and reviews it, around again until it passes. Runs on your own hardware.">
+  <meta property="og:description" content="One model plans, another writes, a sandbox tests, a third reviews. The full record of what worked and what didn't, and the source, free under the AGPL.">
   <meta property="og:image" content="https://delegatron.com/og.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Delegatron: plan, build, test, review. Four glowing nodes circling a loop over a green grid.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Delegatron · AI models that check each other's code">
-  <meta name="twitter:description" content="Describe it in plain words. Delegatron plans it, writes it, tests it and reviews it, around again until it passes. Runs on your own hardware.">
+  <meta name="twitter:description" content="One model plans, another writes, a sandbox tests, a third reviews. The full record of what worked and what didn't, and the source, free under the AGPL.">
   <meta name="twitter:image" content="https://delegatron.com/og.jpg">
   <meta name="twitter:image:alt" content="Delegatron: plan, build, test, review. Four glowing nodes circling a loop over a green grid.">
   <script type="application/ld+json">
@@ -35,166 +36,214 @@
      "author": {"@type": "Organization", "name": "StoriaBrevi LLC", "url": "https://storiabrevi.com"},
      "publisher": {"@type": "Organization", "name": "StoriaBrevi LLC", "url": "https://storiabrevi.com"}}
   </script>
+  <link rel="preload" href="/fonts/newsreader-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/site.css">
-  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/"}}</script>
-  <script type="module" src="/js/main.js"></script>
+  <script defer src="/vendor/rough/rough.min.js"></script>
+  <script defer src="/vendor/gsap/gsap.min.js"></script>
+  <script defer src="/vendor/gsap/ScrollTrigger.min.js"></script>
+  <script defer src="/js/main.js"></script>
 </head>
 <body>
-  <a class="skip" href="#how">Skip to content</a>
-  <canvas id="world" aria-hidden="true"></canvas>
-  <div class="scrim" aria-hidden="true"></div>
+  <a class="skip" href="#loop">Skip to content</a>
 
   <header class="top">
     <a class="brand" href="#top" aria-label="Delegatron home">
-      <img src="/favicon.svg" alt="" width="28" height="28">
+      <img src="/favicon.svg" alt="" width="26" height="26">
       <span>Delegatron</span>
     </a>
     <nav class="links" aria-label="Sections">
-      <a href="#how">How it works</a>
-      <a href="#dashboard">Dashboard</a>
-      <a href="#runs">Runs</a>
-      <a href="#features">Features</a>
+      <a href="#loop">The loop</a>
+      <a href="#record">The record</a>
+      <a href="#findings">Findings</a>
+      <a href="#why">Why it's free</a>
     </nav>
-    <a class="btn btn-small" href="https://github.com/borkit/delegatron" rel="noopener">GitHub</a>
+    <a class="btn btn-small" href="https://github.com/borkit/delegatron" rel="noopener">Source</a>
   </header>
 
-  <nav class="dots" aria-label="Page sections">
-    <a href="#top" aria-label="Start"></a>
-    <a href="#how" aria-label="How it works"></a>
-    <a href="#dashboard" aria-label="Dashboard"></a>
-    <a href="#runs" aria-label="Recorded runs"></a>
-    <a href="#features" aria-label="Features"></a>
-    <a href="#source" aria-label="Source code"></a>
-  </nav>
-
   <main>
-    <section id="top" class="hero" data-accent="#2bd576">
-      <div class="hero-copy">
-        <p class="eyebrow">Open source · runs on your own hardware</p>
-        <h1>AI models that<br>check each other's code.</h1>
-        <p class="lede">Describe what you need in plain words. Delegatron plans it, writes it, runs the tests and reviews the result, and goes around again until it passes or the budget runs out.</p>
-        <div class="ctas">
-          <a class="btn" href="https://github.com/borkit/delegatron" rel="noopener">View source on GitHub</a>
-          <a class="btn btn-ghost" href="#how">How it works</a>
+    <!-- Hero: the title page of the notebook. -->
+    <section id="top" class="hero sheet">
+      <p class="folio"><span>Field notes</span><span>Delegatron 0.3</span><span>Final entry · 2026</span></p>
+      <h1>We built AI models that <span class="mark" data-rough="underline">check each other's code.</span></h1>
+      <aside class="margin-note hero-note" data-for="hero">Mostly. The record below shows where they didn't.</aside>
+      <p class="lede">One model plans, another writes, a sandbox runs the tests and a third reviews, round and round until it passes or the budget runs out. This page is the full record: what worked, what never did, and why the code is now free.</p>
+      <div class="ctas">
+        <a class="btn" href="#record">Read the record</a>
+        <a class="btn btn-ghost" href="https://github.com/borkit/delegatron" rel="noopener">View source on GitHub</a>
+      </div>
+      <dl class="ticker" aria-label="A real run, as recorded">
+        <div><dt>Run</dt><dd>6f29441bbe8c</dd></div>
+        <div><dt>Iterations</dt><dd>7</dd></div>
+        <div><dt>Status</dt><dd class="t-stall">stalled</dd></div>
+        <div><dt>Cost</dt><dd>$0.0131</dd></div>
+        <div><dt>Time</dt><dd>595.5 s</dd></div>
+      </dl>
+    </section>
+
+    <!-- The loop: four roles, then one real run replayed as you scroll. -->
+    <section id="loop" class="sheet">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§1</span> The loop</p>
+        <h2>Four roles, one loop, clear rules.</h2>
+        <p class="lede">Ask one model to write code and it will tell you the code works. Delegatron splits the job the way a small team would, and lets the tests settle the arguments.</p>
+      </header>
+      <ol class="roles">
+        <li class="reveal"><span class="n">01</span><h3>Plan</h3><p>An architect turns the request into small tasks, each with acceptance criteria and the tests that prove it.</p></li>
+        <li class="reveal"><span class="n">02</span><h3>Build</h3><p>An implementer writes the code and its tests as a patch. Nothing touches the project until it's checked.</p></li>
+        <li class="reveal"><span class="n">03</span><h3>Test</h3><p>The patch runs in an isolated sandbox. A failing test is the one opinion nobody gets to argue with.</p></li>
+        <li class="reveal"><span class="n">04</span><h3>Review</h3><p>A reviewer reads the change and the evidence, then approves it or sends it back with the problems listed.</p></li>
+      </ol>
+
+      <div class="replay" id="replay">
+        <div class="replay-copy">
+          <p class="kicker">A real run, replayed</p>
+          <h3 class="replay-title">“Simulate a card game's first deal with a Python script.”</h3>
+          <p>Local models on one graphics card. Scroll to step through all seven iterations as the dashboard recorded them.</p>
+          <p class="replay-status" id="replay-status" aria-live="polite">Seven iterations, then the stall detector stopped the run.</p>
+        </div>
+        <div class="log-wrap">
+          <ol class="log" id="log">
+            <li data-cost="0.0027" data-say="Iteration 1 passes 6 tests and is approved."><span class="i">#1</span><span class="b pass">pass 6</span><span class="v">approved</span><span class="s">Implemented the Card and Deck classes</span><span class="c">$0.0027</span></li>
+            <li data-cost="0.0039" data-say="A fix to an import breaks 2 tests. Sent back."><span class="i">#2</span><span class="b fail">fail 2</span><span class="v">rejected</span><span class="s">Fixed the import statement for the shuffle</span><span class="c">$0.0039</span></li>
+            <li data-cost="0.0048" data-say="Back to green, approved again."><span class="i">#3</span><span class="b pass">pass 2</span><span class="v">approved</span><span class="s">Fixed the issue by defining original_cards</span><span class="c">$0.0048</span></li>
+            <li data-cost="0.0069" data-say="The next piece of work goes in, and 7 tests fail." class="loopback"><span class="i">#4</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Implemented the initial card selection</span><span class="c">$0.0069</span></li>
+            <li data-cost="0.0090" data-say="A fix. The same 7 tests fail." class="loopback"><span class="i">#5</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the deal_card method</span><span class="c">$0.0090</span></li>
+            <li data-cost="0.0111" data-say="Another fix. The same 7 tests fail." class="loopback"><span class="i">#6</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the shuffle method in Deck</span><span class="c">$0.0111</span></li>
+            <li data-cost="0.0131" data-say="Same again. Stall detected, run stopped at $0.0131." class="loopback"><span class="i">#7</span><span class="b fail">fail 7</span><span class="v">rejected</span><span class="s">Fixed the incorrect number of cards</span><span class="c">$0.0131</span></li>
+          </ol>
+          <aside class="margin-note log-note">Four fixes, one failure. Models rewrote whole files instead of finding the bug. We never solved this.</aside>
+          <p class="stamp" id="stamp"><span>Stalled</span></p>
         </div>
       </div>
-
-      <div class="try" id="try">
-        <p class="eyebrow eyebrow-dot">Try the loop · describe a task</p>
-        <form class="field" id="ask" autocomplete="off">
-          <label class="sr-only" for="task">Your task</label>
-          <input id="task" type="text" maxlength="80" spellcheck="false" value="A to-do list API with tests">
-          <button type="submit" class="go" aria-label="Run the loop">Run</button>
-        </form>
-        <ol class="loop" id="loop" aria-live="polite">
-          <li data-step="plan"><b>Plan</b><span>Waiting</span></li>
-          <li data-step="build"><b>Build</b><span>Waiting</span></li>
-          <li data-step="test"><b>Test</b><span>Waiting</span></li>
-          <li data-step="review"><b>Review</b><span>Waiting</span></li>
-        </ol>
-        <p class="hint" id="verdict">A simulation of a real run. Press Run and watch the scene follow along.</p>
-      </div>
     </section>
 
-    <section id="how" class="how" data-accent="#38d9c4">
-      <div class="panel">
-        <p class="eyebrow">How it works</p>
-        <h2>Four roles, one loop, clear rules.</h2>
-        <p class="lede">Ask one AI model to write code and it will tell you the code works. Delegatron splits the job the way a small team would, so nothing reaches you unchecked.</p>
-        <ol class="steps">
-          <li>
-            <span class="num">01</span>
-            <h3>Plan</h3>
-            <p>An architect turns your request into small tasks, each with acceptance criteria and the tests that prove it.</p>
-          </li>
-          <li>
-            <span class="num">02</span>
-            <h3>Build</h3>
-            <p>An implementer writes the code and its tests as a patch. Nothing touches your project until the patch is checked.</p>
-          </li>
-          <li>
-            <span class="num">03</span>
-            <h3>Test</h3>
-            <p>The patch runs in an isolated sandbox. Failing tests are the one opinion nobody gets to argue with.</p>
-          </li>
-          <li>
-            <span class="num">04</span>
-            <h3>Review</h3>
-            <p>A reviewer reads the change and the evidence, then approves it or sends it back with the problems in hand.</p>
-          </li>
-        </ol>
+    <!-- The record: every recorded result, wins and losses in one table. -->
+    <section id="record" class="sheet">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§2</span> The record</p>
+        <h2>What it's good at, and what it isn't.</h2>
+        <p class="lede">End-to-end runs, start to finish with no human edits. Local costs are electricity and hardware wear on a single 12&nbsp;GB card.</p>
+      </header>
+      <div class="table-wrap reveal">
+        <table class="record">
+          <thead><tr><th scope="col">Task</th><th scope="col">Models</th><th scope="col">Result</th><th scope="col" class="num">Cost</th></tr></thead>
+          <tbody>
+            <tr><td>Web service with a database</td><td>Cloud</td><td><span class="b pass">13 / 13</span> approved</td><td class="num">$0.10</td></tr>
+            <tr><td>JavaScript API with tests</td><td>Cloud</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.08</td></tr>
+            <tr><td>Three-module project</td><td>Local</td><td><span class="b pass">12 / 12</span> approved</td><td class="num">$0.006</td></tr>
+            <tr><td>Interactive web component</td><td>Local</td><td><span class="b pass">2 / 2</span> approved</td><td class="num">$0.006</td></tr>
+            <tr><td>Rust, Go, Java and PHP modules</td><td>Local</td><td><span class="b pass">4 / 4</span> approved, each</td><td class="num">≈$0.005</td></tr>
+            <tr class="row-stall"><td>Chess engine with a board UI</td><td>Cloud</td><td><span class="b stall" data-rough="circle">40 / 41</span> stalled</td><td class="num">$0.43</td></tr>
+            <tr class="row-fail"><td>Chess engine with a board UI</td><td>Local</td><td><span class="b fail">0 approvals</span> in 19+ runs</td><td class="num">—</td></tr>
+            <tr class="row-fail"><td>Real GitHub bugs (SWE-bench)</td><td>Local</td><td><span class="b fail" data-rough="circle">0 / 11</span> resolved</td><td class="num">—</td></tr>
+            <tr class="row-fail"><td>Full CLI tool in one go</td><td>Local</td><td><span class="b fail">exhausted</span> on 14B and 30B</td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+        <aside class="margin-note record-note">The architects planned real GitHub bugs correctly every time. The implementers couldn't write a working patch for one of them.</aside>
       </div>
+      <p class="aside-line reveal">Built for new code: services, tools, modules and test suites. Not a bug fixer for large existing codebases, and a person still has to read what it writes.</p>
     </section>
 
-    <section id="dashboard" class="studio" data-accent="#7dd3fc">
-      <div class="studio-head">
-        <p class="eyebrow">The dashboard</p>
-        <h2>See exactly what happened.</h2>
-        <p class="lede">Every plan, patch, test report and review is kept, so a run is never a black box. Start runs, follow them live, and resume or retry them later.</p>
-      </div>
+    <!-- Findings: the struggles, as numbered notebook entries. -->
+    <section id="findings" class="sheet">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§3</span> Findings</p>
+        <h2>Six things we learned the hard way.</h2>
+        <p class="lede">From benchmarks of four local models and a cloud baseline, on the same tasks and the same hardware. The full numbers are in the repository's docs.</p>
+      </header>
+      <ol class="findings">
+        <li class="reveal">
+          <p class="fig"><span>“3”</span> <em>instead of</em> <span>“Fizz”</span></p>
+          <h3>Tests and code disagree more often than either is wrong.</h3>
+          <p>The most common failure across every model: a correct function, and a test that expects the wrong answer. The loop then “fixes” the code to match the broken test.</p>
+        </li>
+        <li class="reveal">
+          <p class="fig"><span>30B</span> 2/5 <em>vs</em> <span>14B</span> 4/5</p>
+          <h3>A bigger model didn't do better.</h3>
+          <p>Qwen3-Coder 30B lost to Qwen2.5-Coder 14B on FizzBuzz and on a FastAPI service, and took up to twice as long. It seemed more inclined to rewrite everything.</p>
+        </li>
+        <li class="reveal">
+          <p class="fig"><span>6</span> iterations <em>&lt;</em> <span>3</span></p>
+          <h3>More iterations meant more regressions.</h3>
+          <p>Doubling the budget on the chess task made results worse. The first attempt got close (9 of 11 tests); every later one broke something that had worked.</p>
+        </li>
+        <li class="reveal">
+          <p class="fig"><span>35 GB</span> in system RAM</p>
+          <h3>A 12&nbsp;GB card is a hard wall.</h3>
+          <p>The 30B model's weights don't fit, so most of them stream over PCIe for every token: about 10 tokens a second instead of 50, and budgets run out before the work is done.</p>
+        </li>
+        <li class="reveal">
+          <p class="fig"><span>5 s</span> <em>vs</em> <span>90 s</span> per passing test</p>
+          <h3>Local was cheaper per run, not per result.</h3>
+          <p>Measured per passing test or by time to working code, the cloud baseline won by a wide margin. Running locally buys privacy, not savings.</p>
+        </li>
+        <li class="reveal">
+          <p class="fig"><span>0</span> approvals, first benchmark</p>
+          <h3>Getting local models to finish at all was the real work.</h3>
+          <p>In the first benchmark, no local model reached an approval on any task, even when every test passed. Simple tasks pass now, after a long list of fixes to the loop itself.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- What's in the box: the engineering, as a spec sheet. -->
+    <section id="spec" class="sheet">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§4</span> What's in the box</p>
+        <h2>Careful by design.</h2>
+      </header>
+      <dl class="spec reveal">
+        <div><dt>Any model, any role</dt><dd>Local models on one 12&nbsp;GB card, cloud models, or a mix, chosen per role.</dd></div>
+        <div><dt>Hard limits</dt><dd>Iterations, spend and time are capped by Delegatron itself, never left to the model.</dd></div>
+        <div><dt>Evidence order</dt><dd>Failing tests beat security checks, which beat reviewer objections, which beat opinions. Repeated disputes get one binding ruling.</dd></div>
+        <div><dt>Patch checks</dt><dd>Leaked secrets, new dependencies and imports that won't resolve are caught before a patch is accepted.</dd></div>
+        <div><dt>Zero-cloud report</dt><dd>Every run records each network destination it touched, so you can show nothing left the building.</dd></div>
+        <div><dt>Languages</dt><dd>Python, JavaScript and TypeScript, Go, Rust, Java and PHP, each tested in its own sandbox.</dd></div>
+        <div><dt>Templates</dt><dd>Thirty: web APIs, command-line tools, audits and test suites.</dd></div>
+        <div><dt>Interfaces</dt><dd>Terminal, REST API with live updates, or the dashboard. Every run gets its own branch.</dd></div>
+      </dl>
+    </section>
+
+    <!-- Dashboard screens, pinned into the notebook like photos. -->
+    <section id="dashboard" class="sheet">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§5</span> The dashboard</p>
+        <h2>Nothing happens off the record.</h2>
+        <p class="lede">Every plan, patch, test report and review is kept. The screens below come from the stalled run replayed above.</p>
+      </header>
       <div class="shots" role="tablist" aria-label="Dashboard screens">
-        <button type="button" role="tab" id="tab-run" aria-selected="true" aria-controls="shot" data-shot="run-detail" data-alt="Run detail: seven iterations with their test results, review verdicts and cost"><span>01</span>Run detail</button>
-        <button type="button" role="tab" id="tab-new" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="new-run" data-alt="New run: describe a task and pick local or cloud model presets"><span>02</span>New run</button>
-        <button type="button" role="tab" id="tab-tpl" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="templates" data-alt="Template library: thirty built-in templates with variables"><span>03</span>Templates</button>
-        <button type="button" role="tab" id="tab-local" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="compliance" data-alt="Zero-cloud report: every event of a run went to this machine, none to the cloud"><span>04</span>Zero-cloud</button>
+        <button type="button" role="tab" id="tab-run" aria-selected="true" aria-controls="shot" data-shot="run-detail" data-alt="Run detail: seven iterations with their test results, review verdicts and cost"><span>a</span>Run detail</button>
+        <button type="button" role="tab" id="tab-new" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="new-run" data-alt="New run: describe a task and pick local or cloud model presets"><span>b</span>New run</button>
+        <button type="button" role="tab" id="tab-tpl" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="templates" data-alt="Template library: thirty built-in templates with variables"><span>c</span>Templates</button>
+        <button type="button" role="tab" id="tab-local" aria-selected="false" aria-controls="shot" tabindex="-1" data-shot="compliance" data-alt="Zero-cloud report: every event of a run went to this machine, none to the cloud"><span>d</span>Zero-cloud</button>
       </div>
-      <figure class="window" id="shot" role="tabpanel" aria-labelledby="tab-run">
-        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span>Delegatron · dashboard</span></div>
+      <figure class="photo" id="shot" role="tabpanel" aria-labelledby="tab-run">
         <img src="/media/run-detail.webp" width="1920" height="1200" loading="lazy" decoding="async"
              alt="Run detail: seven iterations with their test results, review verdicts and cost">
+        <figcaption>Fig. 5 · Screens from a real run on local models.</figcaption>
       </figure>
-      <p class="note">Screens from a real run on local models. That run stalled after seven iterations, and the dashboard shows exactly why.</p>
     </section>
 
-    <section id="runs" class="runs" data-accent="#fbbf24">
-      <div class="runs-head">
-        <p class="eyebrow">Recorded runs</p>
-        <h2>What it's good at, and what it isn't.</h2>
-        <p class="lede">Results from end-to-end runs, start to finish with no human edits. Local costs are electricity and hardware wear.</p>
-      </div>
-      <ul class="cards">
-        <li class="card pass"><span class="tag">Cloud</span><h3>Web service with a database</h3><p class="result">13 of 13 tests · approved</p><p class="cost">$0.10</p></li>
-        <li class="card pass"><span class="tag">Cloud</span><h3>JavaScript API with tests</h3><p class="result">12 of 12 tests · approved</p><p class="cost">$0.08</p></li>
-        <li class="card pass"><span class="tag">Local</span><h3>Interactive web component</h3><p class="result">2 of 2 tests · approved</p><p class="cost">$0.006</p></li>
-        <li class="card pass"><span class="tag">Local</span><h3>Rust library</h3><p class="result">4 of 4 tests · approved</p><p class="cost">$0.005</p></li>
-        <li class="card pass"><span class="tag">Local</span><h3>Three-module project</h3><p class="result">12 of 12 tests · approved</p><p class="cost">$0.006</p></li>
-        <li class="card stall"><span class="tag">Cloud</span><h3>Chess engine with a board UI</h3><p class="result">Stalled at 40 of 41 tests</p><p class="cost">$0.43</p></li>
-      </ul>
-      <p class="note">Built for new code: services, tools, modules and test suites. It isn't a bug fixer for large existing codebases, and a person still has to review what it writes.</p>
-    </section>
-
-    <section id="features" class="features" data-accent="#a3e635">
-      <div class="panel">
-        <p class="eyebrow">Features</p>
-        <h2>Careful by design.</h2>
-        <ul class="grid">
-          <li><h3>Any model, any role</h3><p>Local models on one 12&nbsp;GB graphics card, cloud models, or a mix. Choose per role.</p></li>
-          <li><h3>Hard limits, always on</h3><p>Iterations, spend and time are capped by Delegatron itself, not left to the model.</p></li>
-          <li><h3>Evidence settles arguments</h3><p>Failing tests beat security checks, which beat reviewer objections, which beat opinions. Repeated disputes get one binding ruling.</p></li>
-          <li><h3>Checks on every patch</h3><p>Leaked secrets, new dependencies and imports that won't resolve are caught before a patch is accepted.</p></li>
-          <li><h3>Proof it stayed local</h3><p>Each run records every network destination it touched, so you can show that nothing left the building.</p></li>
-          <li><h3>Thirty templates</h3><p>Web APIs, command-line tools, audits and test suites, with the details filled in when you start.</p></li>
-          <li><h3>Six languages</h3><p>Python, JavaScript and TypeScript, Go, Rust, Java and PHP, each tested in its own sandbox.</p></li>
-          <li><h3>Terminal, API or dashboard</h3><p>The same loop from a command line, a web API with live updates, or the dashboard. Every run gets its own branch.</p></li>
-        </ul>
+    <!-- DRAFT: replace with the author's own reasons for releasing the code. -->
+    <section id="why" class="sheet why">
+      <header class="sec-head reveal">
+        <p class="kicker"><span>§6</span> Why it's free</p>
+        <h2>Finished, and given away as it stands.</h2>
+      </header>
+      <div class="essay reveal">
+        <p>Delegatron is done. It does what this page says it does and stops where this page says it stops, and the gap between the two is the part we found most worth sharing.</p>
+        <p>Rather than leave it in a drawer, we're publishing the code and the record together under the AGPL&#8209;3.0, so anyone working on models that check each other can start from our results, and our failures, instead of repeating them.</p>
+        <p class="sig">StoriaBrevi LLC</p>
       </div>
     </section>
 
-    <section id="source" class="download" data-accent="#2bd576">
-      <div class="panel panel-center">
-        <p class="eyebrow">Open source</p>
-        <h2>Finished, and shared as it stands.</h2>
-        <p class="lede">Delegatron is a completed portfolio project by StoriaBrevi. The code is free to read, run and learn from under the AGPL&#8209;3.0.</p>
-        <a class="btn btn-large" href="https://github.com/borkit/delegatron" rel="noopener">View source on GitHub</a>
-        <div class="setup">
-          <dl>
-            <dt>Status</dt><dd>Version 0.3, complete and not maintained</dd>
-            <dt>License</dt><dd>GNU AGPL&#8209;3.0, no warranty</dd>
-            <dt>Support</dt><dd>None, including installation help</dd>
-            <dt>Contributions</dt><dd>Issues and pull requests are not accepted</dd>
-          </dl>
-        </div>
-      </div>
+    <section id="source" class="sheet source">
+      <dl class="status reveal">
+        <div><dt>Status</dt><dd>Version 0.3, complete, not maintained</dd></div>
+        <div><dt>License</dt><dd>GNU AGPL&#8209;3.0, no warranty</dd></div>
+        <div><dt>Support</dt><dd>None, including installation help</dd></div>
+        <div><dt>Contributions</dt><dd>Issues and pull requests are not accepted</dd></div>
+      </dl>
+      <a class="btn btn-large reveal" href="https://github.com/borkit/delegatron" rel="noopener">View source on GitHub</a>
     </section>
   </main>
 
